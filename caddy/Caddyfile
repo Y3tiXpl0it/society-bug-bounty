@@ -1,0 +1,50 @@
+{
+    # Orden de módulos
+    order rate_limit before basicauth
+}
+
+# CAMBIO AQUÍ: Usamos la variable de entorno en lugar de texto fijo
+{$DOMAIN} {
+    # Headers globales
+    header {
+        X-Frame-Options "DENY"
+        -Server
+    }
+
+    handle /media/* {
+        uri strip_prefix /media
+        root * /data/media
+        file_server
+    }
+
+    # API con Rate Limit
+    handle /api/* {
+        rate_limit {
+            zone api_limit {
+                key {remote_host}
+                events 10
+                window 1s
+            }
+        }
+        uri strip_prefix /api
+        reverse_proxy backend:8000
+    }
+
+    # WebSockets
+    handle /socket.io/* {
+        reverse_proxy backend:8000
+    }
+
+    handle /flower/* {
+        basic_auth {
+            admin {$FLOWER_BASIC_AUTH_HASH}
+        }
+        reverse_proxy flower:5555
+    }
+
+    # Frontend
+    handle {
+        try_files {path} {path}/ /index.html
+        reverse_proxy frontend:80
+    }
+}

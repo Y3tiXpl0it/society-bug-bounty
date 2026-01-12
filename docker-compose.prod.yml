@@ -1,0 +1,213 @@
+services:
+    backend:
+        build:
+            context: ./backend
+        container_name: fastapi_backend_prod
+        restart: unless-stopped
+        expose:
+            - "8000"
+        volumes:
+            # Mount only the media directory for file uploads, not the source code
+            - ./backend/media:/app/media
+        env_file:
+            - .env.prod
+        depends_on:
+            redis:
+                condition: service_healthy
+            db:
+                condition: service_healthy
+        entrypoint: ["/app/entrypoint.sh"]
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "50m"
+                max-file: "5"
+        networks:
+            - app_network
+
+    celery_worker:
+        build:
+            context: ./backend
+        container_name: celery_worker_prod
+        restart: unless-stopped
+        volumes:
+            - ./backend/media:/app/media
+        env_file:
+            - .env.prod
+        depends_on:
+            - redis
+            - db
+        entrypoint: ["/app/entrypoint.sh"]
+        command:
+            [
+                "uv",
+                "run",
+                "celery",
+                "-A",
+                "app.celery_worker",
+                "worker",
+                "--loglevel=info",
+                "--concurrency=2",
+            ]
+        healthcheck:
+            test:
+                ["CMD", "celery", "-A", "app.celery_worker", "inspect", "ping"]
+            interval: 60s
+            timeout: 30s
+            retries: 3
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "50m"
+                max-file: "5"
+        networks:
+            - app_network
+
+    # Celery beat service for scheduled tasks
+    celery_beat:
+        build: ./backend
+        command: uv run celery -A app.celery_worker beat -l info -s /tmp/celerybeat-schedule --pidfile=
+        env_file:
+            - .env.prod
+        depends_on:
+            - db
+            - redis
+        networks:
+            - app_network
+        # Restart always to ensure the beat service stays up if it crashes
+        restart: always
+
+    flower:
+        build:
+            context: ./backend
+        container_name: celery_flower_prod
+        restart: unless-stopped
+        user: "root"
+        # Change ownership of media folder to ensure write access, then switch user to run Flower
+        command: sh -c "chown -R 1000:1000 /app/media && gosu 1000:1000 uv run celery -A app.celery_worker flower --address=0.0.0.0 --port=5555"
+        expose:
+            - "5555"
+        volumes:
+            - ./backend/media:/app/media
+        env_file:
+            - .env.prod
+        depends_on:
+            - redis
+            - celery_worker
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "50m"
+                max-file: "5"
+        networks:
+            - app_network
+
+    frontend:
+        build:
+            context: ./frontend
+            dockerfile: Dockerfile
+            # Inject environment variables during the build process for Vite
+            args:
+                VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+                VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID}
+                VITE_GOOGLE_REDIRECT_URI: ${VITE_GOOGLE_REDIRECT_URI}
+        container_name: frontend_prod
+        restart: unless-stopped
+        # Code volumes and dev commands are removed as the image contains the built assets
+        expose:
+            - "80" # Container listens on standard port 80 (internal)
+        networks:
+            - app_network
+
+    caddy:
+        build:
+            context: ./caddy
+            dockerfile: Dockerfile
+        container_name: caddy_prod
+        restart: unless-stopped
+        ports:
+            - "80:80"
+            - "443:443"
+            - "443:443/udp" # Required for HTTP/3 (QUIC protocol)
+        volumes:
+            - ./caddy/Caddyfile:/etc/caddy/Caddyfile
+            - caddy_data:/data
+            - caddy_config:/config
+            - ./backend/media:/data/media
+        env_file:
+            - .env.prod
+        depends_on:
+            - backend
+            - frontend
+            - flower
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "50m"
+                max-file: "5"
+        networks:
+            - app_network
+
+    # External service simulations (Replace with managed services in actual production)
+    redis:
+        image: redis:7-alpine
+        container_name: redis_prod_simulation
+        restart: unless-stopped
+        expose:
+            - "6379"
+        command: redis-server --appendonly yes
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 10s
+            timeout: 3s
+            retries: 3
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "50m"
+                max-file: "5"
+        networks:
+            - app_network
+        # Note: In a real production environment, replace this with AWS ElastiCache or similar
+
+    db:
+        image: postgres:16-alpine
+        container_name: postgres_prod_simulation
+        restart: unless-stopped
+        env_file:
+            - .env.prod
+        volumes:
+            - postgres_data_prod:/var/lib/postgresql/data
+        ports:
+            - "5432:5432"
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}",
+                ]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "50m"
+                max-file: "5"
+        networks:
+            - app_network
+        # Note: In a real production environment, replace this with AWS RDS or similar
+
+volumes:
+    postgres_data_prod:
+    caddy_data:
+    caddy_config:
+
+networks:
+    app_network:
+        driver: bridge

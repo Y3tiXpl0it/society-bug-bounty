@@ -1,0 +1,50 @@
+# .gitignore
+
+# Virtual Environments
+.venv
+backend/.venv
+frontend/.venv
+
+# Dependencies and Build Artifacts
+node_modules
+frontend/node_modules
+backend/build
+backend/dist
+frontend/dist
+backend/*.egg-info
+
+# Python Cache
+__pycache__
+backend/__pycache__
+
+# Environment Files
+.env
+.env.*
+
+# Exclude template but include actual .env files
+!.env.template
+
+# Logs and Local Databases
+*.log
+*.db
+*.sqlite3
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# VSCode
+.vscode/
+
+# Prettier
+.prettierrc.json
+
+# Media Files
+backend/media/attachments/
+backend/media/avatars/
+
+# PNPM Store
+.pnpm-store
+**/pnpm-store
+# Celery Beat Schedule Files
+celerybeat-schedule*

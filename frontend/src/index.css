@@ -1,0 +1,32 @@
+/* =========================================
+   1. Tailwind CSS Setup & Configuration
+   ========================================= */
+
+/* Import the Tailwind CSS v4 framework */
+@import 'tailwindcss';
+
+/* Theme customization: Define the default sans-serif font family stack */
+@theme {
+  --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+/* Base layer styles and custom utility classes */
+@layer base {
+  /* Set default text color for the body */
+  body {
+    @apply text-gray-700;
+  }
+
+  /* Define custom utility classes for semantic text colors */
+  .text-color-primary {
+    @apply text-gray-700;
+  }
+
+  .text-color-secondary {
+    @apply text-gray-600;
+  }
+
+  .text-color-tertiary {
+    @apply text-blue-600;
+  }
+}

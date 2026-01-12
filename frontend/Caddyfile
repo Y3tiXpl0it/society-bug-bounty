@@ -1,0 +1,14 @@
+:80 {
+    # Servir archivos desde la carpeta donde los copiaremos
+    root * /usr/share/caddy
+    
+    # Compresión para velocidad
+    encode gzip
+
+    # Servidor de archivos estáticos
+    file_server
+
+    # Configuración para SPA (React/Vite):
+    # Si piden una ruta que no es un archivo real (ej: /profile), sirve index.html
+    try_files {path} {path}/ /index.html
+}

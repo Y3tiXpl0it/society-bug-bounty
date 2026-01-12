@@ -1,0 +1,17 @@
+# Dependencias
+node_modules
+
+# Archivos de compilación previos
+dist
+build
+
+# Variables de entorno
+.env
+.env.local
+.env.*
+
+# Sistema y Git
+.git
+.gitignore
+.DS_Store
+Thumbs.db
