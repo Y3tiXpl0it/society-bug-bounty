@@ -91,6 +91,7 @@ def upgrade() -> None:
         sa.Column('is_active', sa.Boolean(), nullable=False),
         sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('now()'), nullable=False),
         sa.Column('updated_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('now()'), nullable=False),
+        sa.Column('deleted_at', sa.TIMESTAMP(timezone=True), nullable=True, default=None),
         sa.ForeignKeyConstraint(['organization_id'], ['organizations.id'], ),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('organization_id', 'slug', name='uq_organization_program_slug')
