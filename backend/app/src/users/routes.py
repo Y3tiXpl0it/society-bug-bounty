@@ -292,5 +292,5 @@ async def upload_avatar(
     Upload an avatar image for the current user.
     """
     avatar_url = await service.upload_avatar(user.id, file)
-    await service.update_user_details(user.id, {"avatar_url": avatar_url})
+    
     return {"avatar_url": avatar_url}

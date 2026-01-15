@@ -39,6 +39,11 @@ class Settings(BaseSettings):
 
     # --- File Upload Settings ---
     MAX_FILES_PER_UPLOAD: int = 10
+    MAX_AVATAR_SIZE: int = 2 * 1024 * 1024  # 2 MB
+    MAX_LOGO_SIZE: int = 5 * 1024 * 1024    # 5 MB
+
+    # Whitelist de extensiones
+    ALLOWED_IMAGE_EXTENSIONS: list[str] = [".jpg", ".jpeg", ".png", ".webp"]
 
     # --- JWT Settings ---
     JWT_SECRET: str

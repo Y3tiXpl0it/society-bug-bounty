@@ -75,3 +75,16 @@ class OrganizationRepository:
         if user in organization.members:
             organization.members.remove(user)
             await self.session.commit()
+
+    async def update(self, organization: Organization, update_data: dict) -> Organization:
+        """
+        Updates fields of an existing organization instance.
+        """
+        for key, value in update_data.items():
+            # Only update attributes that exist on the Organization model
+            setattr(organization, key, value)
+        
+        self.session.add(organization)
+        await self.session.commit()
+        await self.session.refresh(organization)
+        return organization

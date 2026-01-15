@@ -2,11 +2,14 @@
 
 import uuid
 from pathlib import Path
+from app.core.config import settings
 
+
+from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.src.users.models import User
-from app.core.exceptions import BadRequestException
+from app.core.exceptions import BadRequestException, NotFoundException
 from app.utils.image_upload_service import ImageUploadService
 
 # Directory for storing uploaded avatar files
@@ -80,41 +83,38 @@ class UserService:
         await self.session.refresh(user)
         return user
 
-    async def upload_avatar(self, user_id: uuid.UUID, file) -> str:
+    async def upload_avatar(self, user_id: uuid.UUID, file: UploadFile) -> str:
         """
-        Uploads an avatar image for a user and returns the file path.
-        Deletes the old avatar if it exists.
-
-        Args:
-            user_id: The ID of the user uploading the avatar
-            file: The uploaded file
-
-        Returns:
-            The relative path to the uploaded avatar
-
-        Raises:
-            BadRequestException: If file is invalid
+        Upload the avatar, delete the previous one, and update the database.
+        All in one place.
         """
-        # Get current user to check for existing avatar
+        # 1. Get user with their details
         user = await self.get_user_by_id(user_id)
-        if user and user.details and user.details.avatar_url:
-            # Delete old avatar file if it exists
-            # avatar_url is like "/media/avatars/filename.png", so we need to remove the leading "/"
-            old_avatar_path = Path(user.details.avatar_url.lstrip("/"))
+        if not user:
+             raise NotFoundException("User not found")
+
+        # 2. Delete old avatar if it exists
+        if user.details and user.details.avatar_url:
+            old_avatar_path = Path(str(user.details.avatar_url).lstrip("/"))
             if old_avatar_path.exists():
                 try:
                     old_avatar_path.unlink()
                 except OSError:
-                    # Log error but don't fail the upload
                     pass
 
-        # Use centralized image upload service
+        # 3. Upload new avatar (Using your centralized service)
         upload_result = await ImageUploadService.validate_and_save_image(
             file=file,
-            upload_dir=AVATAR_DIR,
-            max_size=MAX_AVATAR_SIZE
+            upload_dir=Path("media/avatars"),
+            max_size=settings.MAX_AVATAR_SIZE,
+            allowed_extensions=settings.ALLOWED_IMAGE_EXTENSIONS
         )
 
-        # Return relative path for serving
+        # 4. Build relative URL
         unique_filename = Path(upload_result["file_path"]).name
-        return f"/media/avatars/{unique_filename}"
+        new_avatar_url = f"/media/avatars/{unique_filename}"
+
+        # 5. UPDATE THE DATABASE HERE (The key change)
+        await self.update_user_details(user.id, {"avatar_url": new_avatar_url})
+
+        return new_avatar_url

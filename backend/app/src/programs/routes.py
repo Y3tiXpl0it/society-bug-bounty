@@ -215,14 +215,12 @@ async def submit_report_for_program(
         # B. Upload and attach files (if any provided)
         if files:
             attachment_service = AttachmentService(session)
-            for file in files:
-                # If file validation fails here, it will jump to the 'except' block
-                await attachment_service.upload_attachment(
-                    entity_type=EntityType.REPORT,
-                    entity_id=new_report.id,
-                    uploader=current_user,
-                    file=file
-                )
+            await attachment_service.upload_multiple_attachments(
+                entity_type=EntityType.REPORT,
+                entity_id=new_report.id,
+                uploader=current_user,
+                files=files
+            )
 
         # C. Final Commit (only if everything succeeded)
         await session.commit()

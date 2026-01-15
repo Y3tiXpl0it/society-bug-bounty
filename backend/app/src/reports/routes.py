@@ -134,13 +134,12 @@ async def add_comment_to_report(
 
         # 2. Upload attachments
         if files:
-            for file in files:
-                await attachment_service.upload_attachment(
-                    entity_type=EntityType.REPORT_COMMENT,
-                    entity_id=comment.id,
-                    uploader=current_user,
-                    file=file
-                )
+            await attachment_service.upload_multiple_attachments(
+                entity_type=EntityType.REPORT_COMMENT,
+                entity_id=comment.id,
+                uploader=current_user,
+                files=files
+            )
         
         # 3. COMMIT CHANGES
         # If we reach here, the image is valid. Persist everything permanently.

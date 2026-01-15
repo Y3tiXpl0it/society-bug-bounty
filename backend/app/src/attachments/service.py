@@ -2,6 +2,7 @@
 import uuid
 from pathlib import Path
 
+from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.src.attachments.models import Attachment, EntityType
@@ -34,15 +35,6 @@ class AttachmentService:
         Uploads a file and creates an attachment record.
 
         Saves the file to disk, computes its checksum, and stores metadata in the database.
-
-        Args:
-            entity_type: The type of entity to attach the file to (e.g., 'report', 'report_comment', 'program').
-            entity_id: The ID of the entity to attach the file to.
-            uploader: The user uploading the file.
-            file: The uploaded file object.
-
-        Returns:
-            The created Attachment instance.
         """
         # Use centralized image upload service
         upload_result = await ImageUploadService.validate_and_save_image(
@@ -63,29 +55,56 @@ class AttachmentService:
         )
 
         return await self.repository.create(attachment_data)
+    
+
+    async def upload_multiple_attachments(
+        self,
+        entity_type: EntityType,
+        entity_id: uuid.UUID,
+        uploader: User,
+        files: list[UploadFile]
+    ) -> list[Attachment]:
+        """
+        Uploads a list of files atomically.
+        If one fails, delete the physical files that have been successfully uploaded
+        before throwing the error, to avoid leaving garbage on the server.
+        """
+        uploaded_attachments = []
+        uploaded_paths_for_rollback = []
+
+        try:
+            for file in files:
+                # We reuse your individual logic
+                attachment = await self.upload_attachment(entity_type, entity_id, uploader, file)
+
+                uploaded_attachments.append(attachment)
+                # We save the physical path in case we need to delete
+                uploaded_paths_for_rollback.append(Path(attachment.file_path))
+            
+            return uploaded_attachments
+
+        except Exception as e:
+            # If file #3 fails, we delete #1 and #2 from disk
+            for path in uploaded_paths_for_rollback:
+                if path.exists():
+                    try:
+                        path.unlink()
+                    except OSError:
+                        pass # Log cleanup error
+
+            # We re-raise the exception so the Router performs the DB rollback
+            raise e
 
 
     async def get_attachments_by_entity(self, entity_type: EntityType, entity_id: uuid.UUID) -> list[Attachment]:
         """
         Retrieves all attachments for a specific entity.
-
-        Args:
-            entity_type: The type of entity.
-            entity_id: The ID of the entity.
-
-        Returns:
-            A list of Attachment instances.
         """
         return await self.repository.get_attachments_by_entity(entity_type, entity_id)
 
     async def get_attachment_by_id(self, attachment_id: uuid.UUID) -> Attachment | None:
         """
         Retrieves a single attachment by its ID.
-
-        Args:
-            attachment_id: The unique ID of the attachment.
-
-        Returns:
-            The Attachment instance if found, otherwise None.
         """
         return await self.repository.get_attachment_by_id(attachment_id)
+
