@@ -1,7 +1,7 @@
 // frontend/src/components/MarkdownEditor.tsx
 
 // Import necessary React hooks and components
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 // Markdown editor component from @uiw/react-markdown-editor
 import MarkdownEditor from '@uiw/react-markdown-editor';
 // ReactMarkdown for rendering markdown in preview
@@ -104,10 +104,10 @@ const CustomMarkdownEditor: React.FC<MarkdownEditorProps> = ({
     };
 
     // Get custom markdown components for rendering
-    const customComponents = getProgramMarkdownComponents({
-        accessToken: accessToken, // Pass access token for image handling
-        onImageClick: (src) => console.log('Image clicked:', src) // Log image clicks
-    });
+    const customComponents = useMemo(() => getProgramMarkdownComponents({
+        accessToken: accessToken,
+        onImageClick: (src) => console.log('Image clicked:', src)
+    }), [accessToken]);
 
     return (
         // Main container with vertical spacing
