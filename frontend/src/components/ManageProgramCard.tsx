@@ -4,6 +4,8 @@ import type { ProgramSummary } from "../types/programTypes";
 import { generateBackgroundColor } from "../utils/colorHelper";
 import { getInitials, formatReward } from "../utils/programHelper"; // Import shared helpers
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 interface ManageProgramCardProps {
     program: ProgramSummary;
     onEdit: (program: ProgramSummary) => void;
@@ -27,7 +29,7 @@ const ManageProgramCard: React.FC<ManageProgramCardProps> = ({
                 <div className="w-16 h-16 rounded-md flex-shrink-0">
                     {program.organization.logo_url ? (
                         <img
-                            src={program.organization.logo_url}
+                            src={`${API_BASE_URL}${program.organization.logo_url}`}
                             alt={`${program.organization.name} logo`}
                             className="w-full h-full object-cover rounded-md"
                         />

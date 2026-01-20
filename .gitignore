@@ -42,6 +42,7 @@ Thumbs.db
 # Media Files
 backend/media/attachments/
 backend/media/avatars/
+backend/media/organizations/
 
 # PNPM Store
 .pnpm-store

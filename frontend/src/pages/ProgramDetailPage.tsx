@@ -15,6 +15,8 @@ import remarkGfm from 'remark-gfm';
 import rehypeFigure from 'rehype-figure';
 import { rehypePlugins } from '../utils/markdownUtils';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 /**
  * Renders the public-facing detail page for a single bug bounty program.
  */
@@ -102,7 +104,7 @@ const ProgramDetailPage: React.FC = () => {
                     <div className="w-20 h-20 rounded-md flex-shrink-0">
                         {program.organization.logo_url ? (
                             <img
-                                src={program.organization.logo_url}
+                                src={`${API_BASE_URL}${program.organization.logo_url}`}
                                 alt={`${program.organization.name} logo`}
                                 className="w-full h-full object-cover rounded-md"
                             />
