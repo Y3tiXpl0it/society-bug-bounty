@@ -10,6 +10,7 @@ import StatusBadge from '../components/StatusBadge';
 import SeverityBadge from '../components/SeverityBadge';
 import { useAuth } from '../hooks/useAuth';
 import { useAsync } from '../hooks/useAsync';
+import { AsyncContent } from '../components/AsyncContent';
 
 /**
  * A page component for viewing the details of a specific report.
@@ -114,128 +115,125 @@ const ReportDetailPage: React.FC = () => {
 
     // --- Render Logic ---
 
-    if (isLoading && !report) {
-        return <div className="text-center p-8">Loading Report...</div>;
-    }
-
-    if (fetchError || !report) {
-        return (
-            <div className="text-center text-red-600 bg-red-100 p-4 rounded-md">
-                {fetchError || 'Report not found.'}
-            </div>
-        );
-    }
-
     return (
         <div className="h-full">
             <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 h-full py-8">
                 
-                {/* Warning Banner for Deleted Programs */}
-                {isProgramDeleted && (
-                    <div className="bg-red-600 mb-6 rounded shadow">
-                        <div className="py-2 px-4">
-                            <div className="flex items-center">
-                                <div className="flex-shrink-0">
-                                    <svg className="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                    </svg>
-                                </div>
-                                <div className="ml-3">
-                                    <p className="text-sm font-medium text-white">
-                                        Warning: The program associated with this report has been deleted.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                <div className="bg-white shadow rounded overflow-hidden self-start flex flex-col">
-                    
-                    {/* Report Header Section */}
-                    <div className="p-6 border-b border-gray-200">
-                        <h1 className="text-xl font-bold mb-4">{report.title}</h1>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            
-                            {/* Column 1: Organization & Program Info */}
-                            <div>
-                                <div className="flex items-center mb-2">
-                                    <p className="text-sm text-gray-500">Organization:</p>
-                                    <p className="text-sm text-gray-900 ml-2">{report.program.organization.name}</p>
-                                </div>
-                                <div className="flex items-center">
-                                    <p className="text-sm text-gray-500">Program:</p>
-                                    <p className="text-sm text-gray-900 ml-2">{isProgramDeleted ? 'Deleted Program' : report.program.name}</p>
-                                </div>
-                            </div>
-
-                            {/* Column 2: Status & Severity Controls */}
-                            <div>
-                                <div className="flex items-center mb-2">
-                                    <p className="text-sm text-gray-500">Status:</p>
-                                    {isOrgAdmin ? (
-                                        <div className="ml-2 relative">
-                                            <StatusSelector
-                                                currentStatus={report.status}
-                                                onStatusChange={handleStatusChange}
-                                                isUpdating={isUpdatingStatus}
-                                                isOpen={openSelector === 'status'}
-                                                onToggle={() => setOpenSelector(openSelector === 'status' ? null : 'status')}
-                                                onClose={() => setOpenSelector(null)}
-                                            />
+                <AsyncContent
+                    loading={isLoading}
+                    error={fetchError}
+                    data={report}
+                    minLoadingTime={300}
+                >
+                    {report && (
+                        <>
+                            {/* Warning Banner for Deleted Programs */}
+                            {isProgramDeleted && (
+                                <div className="bg-red-600 mb-6 rounded shadow">
+                                    <div className="py-2 px-4">
+                                        <div className="flex items-center">
+                                            <div className="flex-shrink-0">
+                                                <svg className="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                                </svg>
+                                            </div>
+                                            <div className="ml-3">
+                                                <p className="text-sm font-medium text-white">
+                                                    Warning: The program associated with this report has been deleted.
+                                                </p>
+                                            </div>
                                         </div>
-                                    ) : (
-                                        <StatusBadge status={report.status} className="ml-2" />
-                                    )}
+                                    </div>
                                 </div>
-                                <div className="flex items-center">
-                                    <p className="text-sm text-gray-500">Severity Score:</p>
-                                    {isOrgAdmin ? (
-                                        <div className="ml-2 relative">
-                                            <SeverityInput
-                                                currentSeverity={report.severity}
-                                                onSeverityChange={handleSeverityChange}
-                                                isUpdating={isUpdatingSeverity}
-                                                isOpen={openSelector === 'severity'}
-                                                onToggle={() => setOpenSelector(openSelector === 'severity' ? null : 'severity')}
-                                                onClose={() => setOpenSelector(null)}
-                                            />
+                            )}
+
+                            <div className="bg-white shadow rounded overflow-hidden self-start flex flex-col">
+                                
+                                {/* Report Header Section */}
+                                <div className="p-6 border-b border-gray-200">
+                                    <h1 className="text-xl font-bold mb-4">{report.title}</h1>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        
+                                        {/* Column 1: Organization & Program Info */}
+                                        <div>
+                                            <div className="flex items-center mb-2">
+                                                <p className="text-sm text-gray-500">Organization:</p>
+                                                <p className="text-sm text-gray-900 ml-2">{report.program.organization.name}</p>
+                                            </div>
+                                            <div className="flex items-center">
+                                                <p className="text-sm text-gray-500">Program:</p>
+                                                <p className="text-sm text-gray-900 ml-2">{isProgramDeleted ? 'Deleted Program' : report.program.name}</p>
+                                            </div>
                                         </div>
-                                    ) : (
-                                        <SeverityBadge severity={report.severity} className="ml-2" />
-                                    )}
+
+                                        {/* Column 2: Status & Severity Controls */}
+                                        <div>
+                                            <div className="flex items-center mb-2">
+                                                <p className="text-sm text-gray-500">Status:</p>
+                                                {isOrgAdmin ? (
+                                                    <div className="ml-2 relative">
+                                                        <StatusSelector
+                                                            currentStatus={report.status}
+                                                            onStatusChange={handleStatusChange}
+                                                            isUpdating={isUpdatingStatus}
+                                                            isOpen={openSelector === 'status'}
+                                                            onToggle={() => setOpenSelector(openSelector === 'status' ? null : 'status')}
+                                                            onClose={() => setOpenSelector(null)}
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <StatusBadge status={report.status} className="ml-2" />
+                                                )}
+                                            </div>
+                                            <div className="flex items-center">
+                                                <p className="text-sm text-gray-500">Severity Score:</p>
+                                                {isOrgAdmin ? (
+                                                    <div className="ml-2 relative">
+                                                        <SeverityInput
+                                                            currentSeverity={report.severity}
+                                                            onSeverityChange={handleSeverityChange}
+                                                            isUpdating={isUpdatingSeverity}
+                                                            isOpen={openSelector === 'severity'}
+                                                            onToggle={() => setOpenSelector(openSelector === 'severity' ? null : 'severity')}
+                                                            onClose={() => setOpenSelector(null)}
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <SeverityBadge severity={report.severity} className="ml-2" />
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Column 3: Timestamps */}
+                                        <div>
+                                            <div className="flex items-center mb-2">
+                                                <p className="text-sm text-gray-500">Submitted:</p>
+                                                <p className="text-sm text-gray-900 ml-2">{new Date(report.created_at).toLocaleString()}</p>
+                                            </div>
+                                            <div className="flex items-center">
+                                                <p className="text-sm text-gray-500">Last Updated:</p>
+                                                <p className="text-sm text-gray-900 ml-2">{new Date(report.updated_at).toLocaleString()}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Report History and Comments Section */}
+                                <div className="flex-1 overflow-y-auto">
+                                    <ReportHistoryAndComments
+                                        reportId={report.id}
+                                        reportDescription={report.description}
+                                        reportAssets={report.assets}
+                                        refreshTrigger={historyRefreshTrigger}
+                                        isProgramDeleted={!!isProgramDeleted}
+                                    />
                                 </div>
                             </div>
+                        </>
+                    )}
+                </AsyncContent>
 
-                            {/* Column 3: Timestamps */}
-                            <div>
-                                <div className="flex items-center mb-2">
-                                    <p className="text-sm text-gray-500">Submitted:</p>
-                                    <p className="text-sm text-gray-900 ml-2">{new Date(report.created_at).toLocaleString()}</p>
-                                </div>
-                                <div className="flex items-center">
-                                    <p className="text-sm text-gray-500">Last Updated:</p>
-                                    <p className="text-sm text-gray-900 ml-2">{new Date(report.updated_at).toLocaleString()}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Report History and Comments Section */}
-                    <div className="flex-1 overflow-y-auto">
-                        {report && (
-                            <ReportHistoryAndComments
-                                reportId={report.id}
-                                reportDescription={report.description}
-                                reportAssets={report.assets}
-                                refreshTrigger={historyRefreshTrigger}
-                                isProgramDeleted={!!isProgramDeleted}
-                            />
-                        )}
-                    </div>
-                </div>
-    
                 {/* Spacer for bottom margin */}
                 <div className="h-8"></div>
             </div>

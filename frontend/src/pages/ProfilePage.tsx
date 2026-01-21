@@ -1,13 +1,14 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { z } from 'zod';
 import { useAuth } from '../hooks/useAuth';
-import { useAsync } from '../hooks/useAsync';
 import userService from '../services/userService';
 import toast from 'react-hot-toast';
 import ConfirmationModal from '../components/ConfirmationModal';
+import { AsyncContent } from '../components/AsyncContent';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+// Validation schema with Zod
 const profileSchema = z.object({
     username: z.string()
         .min(3, 'Username must be at least 3 characters long')
@@ -18,296 +19,311 @@ const profileSchema = z.object({
 });
 
 const ProfilePage: React.FC = () => {
+    // Get authentication state and hooks from useAuth
     const { user, accessToken, setAccessToken, isLoading: isAuthLoading, refreshUser } = useAuth();
+    
+    // Local state for UI
     const [isEditing, setIsEditing] = useState(false);
     
-    // Initialize form state with current user details
+    // Initialize form.
     const [formData, setFormData] = useState({
         username: user?.details?.username || '',
         profile_info: user?.details?.profile_info || '',
     });
     
-    const [errors, setErrors] = useState<{ username?: string; profile_info?: string }>({});
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [errors, setErrors] = useState<{ [key: string]: string }>({});
     
-    // Confirmation modal states
-    const [showAvatarConfirm, setShowAvatarConfirm] = useState(false);
-    const [showProfileConfirm, setShowProfileConfirm] = useState(false);
-    
+    // Avatar upload states
+    const [avatarFile, setAvatarFile] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // Modal and loading states
+    const [showAvatarConfirm, setShowAvatarConfirm] = useState(false);
+    const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+    
+    const [showProfileConfirm, setShowProfileConfirm] = useState(false);
+    const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+
+    // Derived state for disabling buttons (Original style used 'isSaving')
+    const isSaving = isUploadingAvatar || isUpdatingProfile;
+
     // -------------------------------------------------------------------------
-    // 1. Hook to handle Profile Updates
+    // 1. Effect to synchronize user data with form
     // -------------------------------------------------------------------------
-    const { execute: updateProfile, loading: isUpdatingProfile } = useAsync(
-        async () => {
-            return await userService.updateUserDetails(accessToken, formData, setAccessToken);
-        },
-        {
-            onSuccess: async () => {
-                toast.success('Profile updated successfully!');
-                await refreshUser(); // Refresh global auth context
-                setIsEditing(false);
-                setErrors({});
-                setShowProfileConfirm(false);
-            },
-            onError: (message) => {
-                setShowProfileConfirm(false);
-                // Map specific backend errors to form fields
-                if (message.toLowerCase().includes('username already exists')) {
-                    setErrors(prev => ({ ...prev, username: 'Username already exists' }));
-                }
-            }
+    useEffect(() => {
+        if (user && user.details) {
+            setFormData({
+                username: user.details.username || '',
+                profile_info: user.details.profile_info || '',
+            });
         }
-    );
+    }, [user]);
 
     // -------------------------------------------------------------------------
-    // 2. Hook to handle Avatar Uploads
+    // 2. Event Handlers
     // -------------------------------------------------------------------------
-    const { execute: uploadAvatar, loading: isUploadingAvatar } = useAsync(
-        async () => {
-            if (!selectedFile) throw new Error("No file selected");
-            return await userService.uploadAvatar(accessToken, selectedFile, setAccessToken);
-        },
-        {
-            onSuccess: async () => {
-                toast.success('Avatar updated successfully!');
-                await refreshUser(); // Refresh global auth context to show new image
-                setShowAvatarConfirm(false);
-                setSelectedFile(null);
-            },
-            onError: () => {
-                setShowAvatarConfirm(false);
-            }
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+        // Clear error when typing
+        if (errors[name]) {
+            setErrors(prev => ({ ...prev, [name]: '' }));
         }
-    );
-
-    // Derive loading state for UI blocking
-    const isSaving = isUpdatingProfile || isUploadingAvatar;
-
-    // --- Event Handlers ---
-
-    if (isAuthLoading) {
-        return (
-            <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-            </div>
-        );
-    }
-
-    if (!user) {
-        return (
-            <div className="text-center py-8">
-                <p>Please log in to view your profile.</p>
-            </div>
-        );
-    }
-
-    const handleEdit = () => {
-        setFormData({
-            username: user.details?.username || '',
-            profile_info: user.details?.profile_info || '',
-        });
-        setSelectedFile(null);
-        setIsEditing(true);
-    };
-
-    const handleCancel = () => {
-        setIsEditing(false);
-        setErrors({});
-    };
-
-    const handleEditAvatar = () => {
-        fileInputRef.current?.click();
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            setSelectedFile(file);
-            setShowAvatarConfirm(true);
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error('Image is too large. Max 5MB.');
+                return;
+            }
+            if (!file.type.startsWith('image/')) {
+                toast.error('Please select a valid image file.');
+                return;
+            }
+
+            setAvatarFile(file);
+            const url = URL.createObjectURL(file);
+            setPreviewUrl(url);
+            setShowAvatarConfirm(true); 
+        }
+    };
+
+    const handleAvatarClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleUpdateProfile = () => {
+        try {
+            profileSchema.parse(formData);
+            setErrors({});
+            setShowProfileConfirm(true);
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                const formattedErrors: { [key: string]: string } = {};
+                (error as any).errors.forEach((err: any) => {
+                    if (err.path[0]) formattedErrors[err.path[0].toString()] = err.message;
+                });
+                setErrors(formattedErrors);
+                toast.error('Please fix the errors in the form');
+            }
         }
     };
 
     const confirmAvatarUpload = async () => {
-        await uploadAvatar();
+        if (!avatarFile || !accessToken) return;
+
+        setIsUploadingAvatar(true);
+        try {
+            await userService.uploadAvatar(accessToken, avatarFile, setAccessToken); 
+            await refreshUser();
+            toast.success('Profile picture updated successfully');
+            setAvatarFile(null);
+            setPreviewUrl(null);
+        } catch (error: any) {
+            console.error('Error uploading avatar:', error);
+            const msg = error.response?.data?.detail || 'Error updating profile picture';
+            toast.error(msg);
+            setPreviewUrl(null);
+        } finally {
+            setIsUploadingAvatar(false);
+            setShowAvatarConfirm(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
     };
 
     const cancelAvatarUpload = () => {
+        setAvatarFile(null);
+        setPreviewUrl(null);
         setShowAvatarConfirm(false);
-        setSelectedFile(null);
-        // Reset file input to allow selecting the same file again if needed
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
-    const handleSave = () => {
-        // Validate with Zod before showing confirmation modal
-        const result = profileSchema.safeParse(formData);
-        if (!result.success) {
-            const fieldErrors: { username?: string; profile_info?: string } = {};
-            result.error.issues.forEach(issue => {
-                if (issue.path[0] === 'username') fieldErrors.username = issue.message;
-                if (issue.path[0] === 'profile_info') fieldErrors.profile_info = issue.message;
-            });
-            setErrors(fieldErrors);
-            return;
-        }
-        setShowProfileConfirm(true);
-    };
-
     const confirmProfileUpdate = async () => {
-        await updateProfile();
+        if (!accessToken) return;
+
+        setIsUpdatingProfile(true);
+        try {
+            await userService.updateUserDetails(accessToken, formData, setAccessToken);
+            await refreshUser();
+            toast.success('Profile updated successfully');
+            setIsEditing(false);
+        } catch (error: any) {
+            console.error('Error updating profile:', error);
+            const msg = error.response?.data?.detail || 'Error updating profile';
+            toast.error(msg);
+        } finally {
+            setIsUpdatingProfile(false);
+            setShowProfileConfirm(false);
+        }
     };
 
     const cancelProfileUpdate = () => {
         setShowProfileConfirm(false);
     };
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
-
-        // Real-time validation
-        const tempData = { ...formData, [name]: value };
-        const result = profileSchema.safeParse(tempData);
-        
-        const fieldErrors: { username?: string; profile_info?: string } = { ...errors };
-        if (name === 'username') delete fieldErrors.username;
-        if (name === 'profile_info') delete fieldErrors.profile_info;
-
-        if (!result.success) {
-            result.error.issues.forEach(issue => {
-                if (issue.path[0] === name) {
-                    // @ts-ignore
-                    fieldErrors[name] = issue.message;
-                }
+    const handleEdit = () => {
+        if (user?.details) {
+            setFormData({
+                username: user.details.username || '',
+                profile_info: user.details.profile_info || '',
             });
         }
-        setErrors(fieldErrors);
+        setIsEditing(true);
     };
 
+    const handleCancelEdit = () => {
+        setIsEditing(false);
+        setErrors({});
+        if (user?.details) {
+            setFormData({
+                username: user.details.username || '',
+                profile_info: user.details.profile_info || '',
+            });
+        }
+    };
+
+    // Helper for rendering avatar (supports preview or API url)
+    // Note: Trying to match original style where possible, but using current logic variables
+    const displayAvatar = previewUrl || (user?.details?.avatar_url ? `${API_BASE_URL}${user.details.avatar_url}` : null);
+
+    // -------------------------------------------------------------------------
+    // 3. Main Render (Restored Original Style + AsyncContent)
+    // -------------------------------------------------------------------------
     return (
         <div className="max-w-2xl mx-auto py-8 px-4">
             <h1 className="text-3xl font-bold mb-8">My Profile</h1>
 
-            <div className="bg-white shadow rounded p-6">
-                {/* Avatar Section */}
-                <div className="flex items-center mb-6">
-                    <div className="relative">
-                        <div className="w-24 h-24 rounded-full flex items-center justify-center text-2xl font-semibold border border-gray-300">
-                            {user.details?.avatar_url ? (
-                                <img
-                                    src={`${API_BASE_URL}${user.details.avatar_url}`}
-                                    alt="Avatar"
-                                    className="w-24 h-24 rounded-full object-cover"
-                                />
-                            ) : (
-                                user.details?.username?.charAt(0).toUpperCase() || 'U'
+            <AsyncContent
+                loading={isAuthLoading}
+                data={user}
+                error={!user && !isAuthLoading ? "Could not load user information." : null}
+            >
+                <div className="bg-white shadow rounded p-6">
+                    {/* Avatar Section */}
+                    <div className="flex items-center mb-6">
+                        <div className="relative">
+                            <div className="w-24 h-24 rounded-full flex items-center justify-center text-2xl font-semibold border border-gray-300 overflow-hidden">
+                                {displayAvatar ? (
+                                    <img
+                                        src={displayAvatar}
+                                        alt="Profile"
+                                        className="w-24 h-24 rounded-full object-cover"
+                                    />
+                                ) : (
+                                    <span className="text-gray-500">
+                                        {user?.details?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
+                                    </span>
+                                )}
+                            </div>
+                            {!isEditing && (
+                                <button
+                                    onClick={handleAvatarClick}
+                                    disabled={isSaving}
+                                    className="absolute bottom-0 left-0 px-1.5 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 rounded text-xs flex items-center cursor-pointer"
+                                >
+                                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                    Edit
+                                </button>
                             )}
                         </div>
-                        {!isEditing && (
-                            <button
-                                onClick={handleEditAvatar}
-                                disabled={isSaving}
-                                className="absolute bottom-0 left-0 px-1.5 py-0.5 bg-gray-100 hover:bg-gray-200 text-color-primary border border-gray-300 rounded text-xs flex items-center cursor-pointer"
-                            >
-                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                                Edit
-                            </button>
-                        )}
-                    </div>
-                    <div className="ml-4 flex-1">
-                        <h2 className="text-xl font-semibold">
-                            {user.details?.username || 'No username'}
-                        </h2>
-                        <p>{user.email}</p>
-                    </div>
-                </div>
-
-                {/* Profile Info Form */}
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-color-primary">Email</label>
-                        <p className="mt-1">{user.email}</p>
+                        <div className="ml-4 flex-1">
+                            <h2 className="text-xl font-semibold">
+                                {user?.details?.username || 'No username'}
+                            </h2>
+                            <p className="text-gray-600">{user?.email}</p>
+                        </div>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-color-primary">Username</label>
+                    {/* Profile Info Form */}
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Email</label>
+                            <p className="mt-1 text-gray-900">{user?.email}</p>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Username</label>
+                            {isEditing ? (
+                                <>
+                                    <input
+                                        type="text"
+                                        name="username"
+                                        value={formData.username}
+                                        onChange={handleInputChange}
+                                        disabled={isSaving}
+                                        className={`w-full px-3 py-2 border rounded text-gray-900 focus:outline-none focus:border-indigo-500 focus:ring-indigo-500 ${
+                                            errors.username ? 'border-red-500' : 'border-gray-300'
+                                        }`}
+                                    />
+                                    {errors.username && <p className="mt-1 text-sm text-red-600">{errors.username}</p>}
+                                </>
+                            ) : (
+                                <p className="mt-1 text-gray-900">{user?.details?.username || 'Not set'}</p>
+                            )}
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Bio</label>
+                            {isEditing ? (
+                                <>
+                                    <textarea
+                                        name="profile_info"
+                                        value={formData.profile_info}
+                                        onChange={handleInputChange}
+                                        disabled={isSaving}
+                                        rows={4}
+                                        maxLength={500}
+                                        className={`w-full px-3 py-2 border rounded text-gray-900 focus:outline-none focus:border-indigo-500 focus:ring-indigo-500 break-words ${
+                                            errors.profile_info ? 'border-red-500' : 'border-gray-300'
+                                        }`}
+                                        placeholder="Tell us about yourself..."
+                                    />
+                                    {errors.profile_info && <p className="mt-1 text-sm text-red-600">{errors.profile_info}</p>}
+                                </>
+                            ) : (
+                                <p className="mt-1 break-words text-gray-900">{user?.details?.profile_info || 'No bio set'}</p>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="mt-6 flex justify-end space-x-3">
                         {isEditing ? (
                             <>
-                                <input
-                                    type="text"
-                                    name="username"
-                                    value={formData.username}
-                                    onChange={handleInputChange}
+                                <button
+                                    onClick={handleCancelEdit}
+                                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
                                     disabled={isSaving}
-                                    className={`w-full px-3 py-2 border rounded text-color-primary focus:outline-none focus:border-indigo-500 focus:ring-indigo-500 ${
-                                        errors.username ? 'border-red-500' : 'border-gray-300'
-                                    }`}
-                                />
-                                {errors.username && <p className="mt-1 text-sm text-red-600">{errors.username}</p>}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleUpdateProfile}
+                                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 flex items-center"
+                                    disabled={isSaving}
+                                >
+                                    {isUpdatingProfile ? 'Saving...' : 'Save Changes'}
+                                </button>
                             </>
                         ) : (
-                            <p className="mt-1">{user.details?.username || 'Not set'}</p>
-                        )}
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-color-primary">Bio</label>
-                        {isEditing ? (
-                            <>
-                                <textarea
-                                    name="profile_info"
-                                    value={formData.profile_info}
-                                    onChange={handleInputChange}
-                                    disabled={isSaving}
-                                    rows={4}
-                                    maxLength={500}
-                                    className={`w-full px-3 py-2 border rounded text-color-primary focus:outline-none focus:border-indigo-500 focus:ring-indigo-500 break-words ${
-                                        errors.profile_info ? 'border-red-500' : 'border-gray-300'
-                                    }`}
-                                    placeholder="Tell us about yourself..."
-                                />
-                                {errors.profile_info && <p className="mt-1 text-sm text-red-600">{errors.profile_info}</p>}
-                            </>
-                        ) : (
-                            <p className="mt-1 break-words">{user.details?.profile_info || 'No bio set'}</p>
+                            <button
+                                onClick={handleEdit}
+                                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 cursor-pointer"
+                            >
+                                Edit Profile
+                            </button>
                         )}
                     </div>
                 </div>
+            </AsyncContent>
 
-                {/* Action Buttons */}
-                <div className="mt-6 flex justify-end space-x-3">
-                    {isEditing ? (
-                        <>
-                            <button
-                                onClick={handleCancel}
-                                className="px-4 py-2 border border-gray-300 rounded-md text-color-primary hover:bg-gray-50"
-                                disabled={isSaving}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleSave}
-                                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 flex items-center"
-                                disabled={isSaving}
-                            >
-                                {isSaving ? 'Saving...' : 'Save Changes'}
-                            </button>
-                        </>
-                    ) : (
-                        <button
-                            onClick={handleEdit}
-                            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 cursor-pointer"
-                        >
-                            Edit Profile
-                        </button>
-                    )}
-                </div>
-            </div>
-
+            {/* Confirmation Modals */}
             <ConfirmationModal
                 isOpen={showAvatarConfirm}
                 title="Confirm Avatar Update"
@@ -330,6 +346,7 @@ const ProfilePage: React.FC = () => {
                 isLoading={isUpdatingProfile}
             />
 
+            {/* Hidden file input */}
             <input
                 type="file"
                 ref={fileInputRef}

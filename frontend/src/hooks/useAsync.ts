@@ -2,19 +2,19 @@ import { useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../utils/errorHelpers';
 
-interface UseAsyncOptions<T> {
+interface UseAsyncOptions<T, E = Error> {
     onSuccess?: (data: T) => void;
-    onError?: (message: string) => void;
-    showToastError?: boolean; // Por defecto true
+    onError?: (error: E) => void;
+    showToastError?: boolean;
 }
 
-export const useAsync = <T, args extends any[] = any[]>(
+export const useAsync = <T, E = Error, args extends any[] = any[]>(
     asyncFunction: (...args: args) => Promise<T>,
-    options: UseAsyncOptions<T> = {}
+    options: UseAsyncOptions<T, E> = {}
 ) => {
     const [data, setData] = useState<T | null>(null);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<E | null>(null);
 
     const execute = useCallback(async (...args: args) => {
         setLoading(true);
@@ -26,14 +26,16 @@ export const useAsync = <T, args extends any[] = any[]>(
             if (options.onSuccess) options.onSuccess(result);
             return result;
         } catch (err) {
+            const errorObj = err as E;
+            setError(errorObj);
+
             const message = getErrorMessage(err);
-            setError(message);
             
             if (options.showToastError !== false) {
                 toast.error(message);
             }
             
-            if (options.onError) options.onError(message);
+            if (options.onError) options.onError(errorObj);
             return null;
         } finally {
             setLoading(false);

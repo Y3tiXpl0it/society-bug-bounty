@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../hooks/useAuth';
 import { useAsync } from '../hooks/useAsync'; // Centralized hook
+import { AsyncContent } from '../components/AsyncContent';
 import programService from '../services/programService';
 import attachmentService from '../services/attachmentService'; // Restored
 import ReportSubmitForm from '../components/ReportForm';
@@ -147,32 +148,33 @@ const ReportSubmitPage: React.FC = () => {
         setPendingFormData(null);
     };
 
-    // --- Render Logic ---
-
-    if (isLoading) {
-        return <div className="text-center p-8">Loading program info...</div>;
-    }
-
-    if (fetchError || !program) {
-        return (
-            <div className="text-center text-red-600 bg-red-100 p-4 rounded-md">
-                {fetchError ? String(fetchError) : 'Program not found.'}
-            </div>
-        );
-    }
+    // -------------------------------------------------------------------------
+    // 3. Render Logic
+    // -------------------------------------------------------------------------
 
     return (
         <div className="min-h-screen bg-gray-50 py-8">
             <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 className="text-3xl font-bold mb-6">Submit a New Report</h1>
                 
-                <ReportSubmitForm
-                    onSubmit={handleSubmitReport}
-                    isSubmitting={isSubmitting}
-                    programName={program.name}
-                    organizationName={program.organization.name}
-                    assets={program.assets}
-                />
+                <AsyncContent
+                    loading={isLoading}
+                    error={fetchError}
+                    data={program}
+                >
+                    {program && (
+                        <>
+                            <h1 className="text-3xl font-bold mb-6">Submit a New Report</h1>
+                            
+                            <ReportSubmitForm
+                                onSubmit={handleSubmitReport}
+                                isSubmitting={isSubmitting}
+                                programName={program.name}
+                                organizationName={program.organization.name}
+                                assets={program.assets}
+                            />
+                        </>
+                    )}
+                </AsyncContent>
 
                 <ConfirmationModal
                     isOpen={showConfirm}

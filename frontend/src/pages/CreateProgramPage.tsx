@@ -1,5 +1,5 @@
 // src/pages/CreateProgramPage.tsx
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAsync } from '../hooks/useAsync';
@@ -7,13 +7,15 @@ import { useAuth } from '../hooks/useAuth';
 import programService from '../services/programService';
 import ProgramForm from '../components/ProgramForm';
 import ConfirmationModal from '../components/ConfirmationModal';
+import { AsyncContent } from '../components/AsyncContent';
 import type { ProgramCreateData, ProgramBulkUpdateData } from '../types/programTypes';
+
+// Definimos opciones por defecto constantes para evitar recreación de objetos
+const DEFAULT_FETCH_OPTIONS = {};
 
 /**
  * Renders the page for creating a new bug bounty program.
- * This component acts as a "container" or "wrapper". It utilizes the generic
- * ProgramForm for the UI and state management, and is responsible for handling
- * the final submission logic.
+ * Refactored to use AsyncContent for loading states and optimized hooks.
  */
 const CreateProgramPage: React.FC = () => {
     const navigate = useNavigate();
@@ -21,53 +23,91 @@ const CreateProgramPage: React.FC = () => {
     const [pendingFormData, setPendingFormData] = useState<ProgramCreateData | null>(null);
     const { accessToken, setAccessToken } = useAuth();
 
-    // hook to handle program creation
-    const { execute: createProgram, loading: isSubmitting } = useAsync(
-        async (data: ProgramCreateData) => {
-            return await programService.createProgram(accessToken, data, setAccessToken);
+    // -------------------------------------------------------------------------
+    // 1. Hook to FETCH initial data (organizations/programs)
+    // -------------------------------------------------------------------------
+    
+    const fetchOrgsCall = useCallback(async () => {
+        return await programService.getMyPrograms(accessToken, setAccessToken); 
+    }, [accessToken, setAccessToken]);
+
+    const { 
+        execute: loadOrgs, 
+        loading: loadingOrgs, 
+        error: errorOrgs, 
+        data: organizations 
+    } = useAsync(fetchOrgsCall, DEFAULT_FETCH_OPTIONS);
+
+    useEffect(() => {
+        loadOrgs();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); 
+
+    // -------------------------------------------------------------------------
+    // 2. Hook TO CREATE program
+    // -------------------------------------------------------------------------
+    
+    const createProgramCall = useCallback(async (data: ProgramCreateData) => {
+        return await programService.createProgram(accessToken, data, setAccessToken);
+    }, [accessToken, setAccessToken]);
+
+    const asyncOptions = useMemo(() => ({
+        onSuccess: () => {
+            toast.success('Program created successfully!');
+            navigate('/programs');
         },
-        {
-            onSuccess: () => {
-                toast.success('Program created successfully!');
-                navigate('/programs');
-            },
-            showToastError: true 
-        }
+        showToastError: true
+    }), [navigate]);
+
+    const { execute: createProgram, loading: isSubmitting } = useAsync(
+        createProgramCall,
+        asyncOptions
     );
 
-    // Handles the form submission from ProgramForm.
-    const handleCreateProgram = async (formData: ProgramCreateData | ProgramBulkUpdateData) => {
+    // -------------------------------------------------------------------------
+    // 3. Handlers
+    // -------------------------------------------------------------------------
+    
+    const handleCreateProgram = useCallback(async (formData: ProgramCreateData | ProgramBulkUpdateData) => {
         setPendingFormData(formData as ProgramCreateData);
         setShowConfirm(true);
-    };
+    }, []);
 
-    // Confirms the submission and proceeds to create the program.
     const confirmSubmit = async () => {
         if (pendingFormData) {
-            setShowConfirm(false);
+            setShowConfirm(false); 
             await createProgram(pendingFormData);
             setPendingFormData(null);
         }
     };
 
-    /**
-     * Cancels the confirmation dialog.
-     */
     const cancelSubmit = () => {
         setShowConfirm(false);
         setPendingFormData(null);
     };
 
+    // -------------------------------------------------------------------------
+    // 4. Render
+    // -------------------------------------------------------------------------
+    
     return (
         <div className="min-h-screen bg-gray-50 py-8">
             <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h1 className="text-3xl font-bold mb-6">Create a New Program</h1>
 
-                <ProgramForm
-                    onSubmit={handleCreateProgram}
-                    isSubmitting={isSubmitting}
-                    submitButtonText="Create Program"
-                />
+                {/* AsyncContent wraps the form to ensure basic data is loaded before interaction */}
+                <AsyncContent
+                    loading={loadingOrgs}
+                    error={errorOrgs}
+                    data={organizations}
+                    minLoadingTime={300}
+                >
+                    <ProgramForm
+                        onSubmit={handleCreateProgram}
+                        isSubmitting={isSubmitting}
+                        submitButtonText="Create Program"
+                    />
+                </AsyncContent>
 
                 <ConfirmationModal
                     isOpen={showConfirm}
