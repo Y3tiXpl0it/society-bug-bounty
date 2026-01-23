@@ -23,7 +23,11 @@ class RefreshTokenService:
         self.session = session
         self.logger = get_logger(__name__)
 
-    async def enforce_user_token_limit(self, user_id: uuid.UUID, max_tokens: int = int(os.getenv('MAX_REFRESH_TOKENS', '5'))):
+    async def enforce_user_token_limit(
+        self, user_id: uuid.UUID, 
+        max_tokens: int = int(os.getenv('MAX_REFRESH_TOKENS', '5')),
+        exclude_id: Optional[uuid.UUID] = None
+    ):
         """
         Enforce the user's refresh token limit.
         Optimization: Keeps the top (max_tokens - 1) tokens and bulk deletes the rest.
@@ -61,6 +65,9 @@ class RefreshTokenService:
             .where(RefreshToken.user_id == user_id)
             .where(RefreshToken.id.not_in(stmt_keep))
         )
+
+        if exclude_id:
+            delete_stmt = delete_stmt.where(RefreshToken.id != exclude_id)
 
         result = await self.session.execute(delete_stmt)
         
@@ -183,7 +190,7 @@ class RefreshTokenService:
         token_record.revoke()
 
         # Enforce token limit before creating a new one
-        await self.enforce_user_token_limit(user.id)
+        await self.enforce_user_token_limit(user.id, exclude_id=token_record.id)
 
         # Generate new tokens
         new_refresh_token = RefreshToken.generate_token()
