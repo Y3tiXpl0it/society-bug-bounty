@@ -1,9 +1,9 @@
 // src/pages/LoginPage.tsx
-import React, { useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { useAuth } from '../hooks/useAuth';
-import { useAsync } from '../hooks/useAsync';
 import { AsyncContent } from '../components/AsyncContent';
 import authService from '../services/authService';
 import userService from '../services/userService';
@@ -20,37 +20,47 @@ const LoginPage: React.FC = () => {
     const message = location.state?.message as string | undefined;
 
     // -------------------------------------------------------------------------
-    // 1. Auth Logic (Refactored & Optimized)
+    // 1. Mutation (Login Logic)
     // -------------------------------------------------------------------------
 
-    // Memoized login function to handle the code exchange
-    const loginCall = useCallback(async (code: string) => {
-        const { access_token } = await authService.exchangeOAuthCode(code);
-        // Fetch full profile (logic maintained from refactor)
-        const fullUser = await userService.getUserProfile(access_token, () => {});
-        return { access_token, user: fullUser };
-    }, []);
-
-    // Stable options
-    const asyncOptions = useMemo(() => ({
-        onSuccess: (data: any) => {
-            login(data.access_token, data.user);
-            window.history.replaceState({}, document.title, window.location.pathname);
-            navigate('/programs');
-        },
-        showToastError: true 
-    }), [login, navigate]);
-
     const { 
-        execute: processLogin, 
-        loading: isProcessing, 
+        mutate: processLogin, 
+        isPending: isProcessing, 
         error 
-    } = useAsync(loginCall, asyncOptions);
+    } = useMutation({
+        mutationFn: async (code: string) => {
+            // 1. Exchange code for access token
+            const { access_token } = await authService.exchangeOAuthCode(code);
+            
+            // 2. Fetch full user profile using the new token
+            // Note: We pass an empty callback () => {} because we handle state update in onSuccess
+            const fullUser = await userService.getUserProfile(access_token, () => {});
+            
+            return { access_token, user: fullUser };
+        },
+        onSuccess: (data) => {
+            // Update Auth Context
+            login(data.access_token, data.user);
+            
+            // Clean URL (remove ?code=...)
+            window.history.replaceState({}, document.title, window.location.pathname);
+            
+            // Navigate to dashboard
+            navigate('/programs');
+            toast.success('Welcome back!');
+        },
+        onError: (err: any) => {
+            console.error("Login failed", err);
+            const msg = err?.response?.data?.detail || "Failed to log in.";
+            toast.error(msg);
+        }
+    });
 
     // -------------------------------------------------------------------------
     // 2. Effects & Handlers
     // -------------------------------------------------------------------------
 
+    // Trigger login if 'code' is present in URL (OAuth callback)
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         const code = params.get('code');
@@ -72,7 +82,7 @@ const LoginPage: React.FC = () => {
     };
 
     // -------------------------------------------------------------------------
-    // 3. Render (Restored Original Style)
+    // 3. Render
     // -------------------------------------------------------------------------
 
     return (
@@ -105,7 +115,7 @@ const LoginPage: React.FC = () => {
                         </div>
                     )}
 
-                    {/* Google OAuth sign-in button (Original Indigo Style) */}
+                    {/* Google OAuth sign-in button */}
                     <div className="mt-8">
                         <button
                             onClick={handleGoogleLogin}

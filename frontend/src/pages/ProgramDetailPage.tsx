@@ -1,10 +1,10 @@
 // src/pages/ProgramDetailPage.tsx
-import React, { useEffect, useCallback, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import toast from 'react-hot-toast';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
-import { useAsync } from '../hooks/useAsync';
 import programService from '../services/programService';
 import { generateBackgroundColor } from '../utils/colorHelper';
 import { getInitials, formatReward } from '../utils/programHelper';
@@ -18,6 +18,7 @@ import { AsyncContent } from '../components/AsyncContent';
 
 /**
  * Renders the public-facing detail page for a single bug bounty program.
+ * Refactored to use TanStack Query instead of useAsync.
  */
 const ProgramDetailPage: React.FC = () => {
     const navigate = useNavigate();
@@ -29,35 +30,27 @@ const ProgramDetailPage: React.FC = () => {
     const { accessToken, setAccessToken, isLoggedIn } = useAuth();
 
     // -------------------------------------------------------------------------
-    // 1. Hook to fetch program details using useAsync
+    // 1. Data Fetching (TanStack Query)
     // -------------------------------------------------------------------------
     
-    const getProgramData = useCallback(async () => {
-        if (!orgSlug || !progSlug) throw new Error("Missing parameters");
-        return await programService.getProgramBySlug(accessToken, orgSlug, progSlug, setAccessToken);
-    }, [accessToken, orgSlug, progSlug, setAccessToken]);
-
-    const asyncOptions = useMemo(() => ({
-        onError: (err: any) => {
-            const message = err.response?.data?.detail || err.response?.data?.message || err.message || 'Failed to load program.';
-            toast.error(message);
-        }
-    }), []);
-
     const { 
         data: program, 
-        loading: isLoading, 
-        error,
-        execute: fetchProgram 
-    } = useAsync(getProgramData, asyncOptions);
-
-    useEffect(() => {
-        fetchProgram();
-    }, [fetchProgram]);
+        isLoading, 
+        error 
+    } = useQuery({
+        queryKey: ['program', orgSlug, progSlug, accessToken],
+        queryFn: () => {
+            if (!orgSlug || !progSlug) throw new Error("Missing parameters");
+            return programService.getProgramBySlug(accessToken, orgSlug, progSlug, setAccessToken);
+        },
+        // Only run the query if we have the slugs
+        enabled: !!orgSlug && !!progSlug,
+    });
 
     // -------------------------------------------------------------------------
     // 2. Event Handlers
     // -------------------------------------------------------------------------
+    
     const handleSubmitReportClick = () => {
         if (!isLoggedIn) {
             navigate('/login', { state: { message: 'You need to sign in or sign up before continuing.' } });
@@ -74,13 +67,16 @@ const ProgramDetailPage: React.FC = () => {
     // 3. Render Logic
     // -------------------------------------------------------------------------
 
-    // Mantenemos la lógica de sort idéntica al original estéticamente
-    const sortedRewards = program ? [...program.rewards].sort((a, b) => {
-        const severityOrder: Record<string, number> = { low: 1, medium: 2, high: 3, critical: 4 };
-        const severityA = severityOrder[a.severity] || 0;
-        const severityB = severityOrder[b.severity] || 0;
-        return severityB - severityA;
-    }) : [];
+    // Sort rewards by severity descending
+    const sortedRewards = useMemo(() => {
+        if (!program) return [];
+        return [...program.rewards].sort((a, b) => {
+            const severityOrder: Record<string, number> = { low: 1, medium: 2, high: 3, critical: 4 };
+            const severityA = severityOrder[a.severity] || 0;
+            const severityB = severityOrder[b.severity] || 0;
+            return severityB - severityA;
+        });
+    }, [program]);
 
     return (
         <AsyncContent 

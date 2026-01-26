@@ -6,7 +6,7 @@ import MarkdownEditor from './MarkdownEditor';
 import { useMarkdownEditorWithAttachments } from '../hooks/useMarkdownEditorWithAttachments';
 
 interface ReportSubmitFormProps {
-    onSubmit: (payload: FormData, dataUrls: string[], filenames: string[]) => Promise<void>;
+    onSubmit: (payload: FormData, filenames: string[]) => Promise<void>;
     isSubmitting: boolean;
     programName: string;
     organizationName: string;
@@ -96,7 +96,6 @@ const ReportSubmitForm: React.FC<ReportSubmitFormProps> = ({
 
         onSubmit(
             formData,
-            imagePreviews.map((p) => p.dataUrl),
             imagePreviews.map((p) => p.file.name)
         );
     };

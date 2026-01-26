@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { z } from 'zod';
+import { useMutation } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
 import userService from '../services/userService';
 import toast from 'react-hot-toast';
@@ -38,19 +39,67 @@ const ProfilePage: React.FC = () => {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Modal and loading states
+    // Modal states
     const [showAvatarConfirm, setShowAvatarConfirm] = useState(false);
-    const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-    
     const [showProfileConfirm, setShowProfileConfirm] = useState(false);
-    const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
-    // Derived state for disabling buttons (Original style used 'isSaving')
+    // -------------------------------------------------------------------------
+    // 1. Mutations (TanStack Query)
+    // -------------------------------------------------------------------------
+
+    // Mutation for Avatar Upload
+    const { mutate: uploadAvatar, isPending: isUploadingAvatar } = useMutation({
+        mutationFn: async () => {
+            if (!avatarFile || !accessToken) throw new Error("Missing file or token");
+            return await userService.uploadAvatar(accessToken, avatarFile, setAccessToken);
+        },
+        onSuccess: async () => {
+            await refreshUser();
+            toast.success('Profile picture updated successfully');
+            // Clear local state
+            setAvatarFile(null);
+            setPreviewUrl(null);
+            // Close modal only on success
+            setShowAvatarConfirm(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        },
+        onError: (error: any) => {
+            console.error('Error uploading avatar:', error);
+            const msg = error.response?.data?.detail || 'Error updating profile picture';
+            toast.error(msg);
+            setPreviewUrl(null);
+            // Modal stays open so user can retry or cancel manually
+        }
+    });
+
+    // Mutation for Profile Details Update
+    const { mutate: updateProfile, isPending: isUpdatingProfile } = useMutation({
+        mutationFn: async () => {
+            if (!accessToken) throw new Error("Missing token");
+            return await userService.updateUserDetails(accessToken, formData, setAccessToken);
+        },
+        onSuccess: async () => {
+            await refreshUser();
+            toast.success('Profile updated successfully');
+            // Close edit mode and modal only on success
+            setIsEditing(false);
+            setShowProfileConfirm(false);
+        },
+        onError: (error: any) => {
+            console.error('Error updating profile:', error);
+            const msg = error.response?.data?.detail || 'Error updating profile';
+            toast.error(msg);
+            // Modal stays open
+        }
+    });
+
+    // Derived state for disabling buttons
     const isSaving = isUploadingAvatar || isUpdatingProfile;
 
     // -------------------------------------------------------------------------
-    // 1. Effect to synchronize user data with form
+    // 2. Effects & Handlers
     // -------------------------------------------------------------------------
+
     useEffect(() => {
         if (user && user.details) {
             setFormData({
@@ -59,10 +108,6 @@ const ProfilePage: React.FC = () => {
             });
         }
     }, [user]);
-
-    // -------------------------------------------------------------------------
-    // 2. Event Handlers
-    // -------------------------------------------------------------------------
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -104,7 +149,7 @@ const ProfilePage: React.FC = () => {
         } catch (error) {
             if (error instanceof z.ZodError) {
                 const formattedErrors: { [key: string]: string } = {};
-                (error as any).errors.forEach((err: any) => {
+                error.issues.forEach((err) => {
                     if (err.path[0]) formattedErrors[err.path[0].toString()] = err.message;
                 });
                 setErrors(formattedErrors);
@@ -113,52 +158,11 @@ const ProfilePage: React.FC = () => {
         }
     };
 
-    const confirmAvatarUpload = async () => {
-        if (!avatarFile || !accessToken) return;
-
-        setIsUploadingAvatar(true);
-        try {
-            await userService.uploadAvatar(accessToken, avatarFile, setAccessToken); 
-            await refreshUser();
-            toast.success('Profile picture updated successfully');
-            setAvatarFile(null);
-            setPreviewUrl(null);
-        } catch (error: any) {
-            console.error('Error uploading avatar:', error);
-            const msg = error.response?.data?.detail || 'Error updating profile picture';
-            toast.error(msg);
-            setPreviewUrl(null);
-        } finally {
-            setIsUploadingAvatar(false);
-            setShowAvatarConfirm(false);
-            if (fileInputRef.current) fileInputRef.current.value = '';
-        }
-    };
-
     const cancelAvatarUpload = () => {
         setAvatarFile(null);
         setPreviewUrl(null);
         setShowAvatarConfirm(false);
         if (fileInputRef.current) fileInputRef.current.value = '';
-    };
-
-    const confirmProfileUpdate = async () => {
-        if (!accessToken) return;
-
-        setIsUpdatingProfile(true);
-        try {
-            await userService.updateUserDetails(accessToken, formData, setAccessToken);
-            await refreshUser();
-            toast.success('Profile updated successfully');
-            setIsEditing(false);
-        } catch (error: any) {
-            console.error('Error updating profile:', error);
-            const msg = error.response?.data?.detail || 'Error updating profile';
-            toast.error(msg);
-        } finally {
-            setIsUpdatingProfile(false);
-            setShowProfileConfirm(false);
-        }
     };
 
     const cancelProfileUpdate = () => {
@@ -187,11 +191,11 @@ const ProfilePage: React.FC = () => {
     };
 
     // Helper for rendering avatar (supports preview or API url)
-    // Note: Trying to match original style where possible, but using current logic variables
+    // Using existing avatar_url from your type definition
     const displayAvatar = previewUrl || (user?.details?.avatar_url ? `${API_BASE_URL}${user.details.avatar_url}` : null);
 
     // -------------------------------------------------------------------------
-    // 3. Main Render (Restored Original Style + AsyncContent)
+    // 3. Main Render (Original UI Style preserved)
     // -------------------------------------------------------------------------
     return (
         <div className="max-w-2xl mx-auto py-8 px-4">
@@ -200,6 +204,7 @@ const ProfilePage: React.FC = () => {
             <AsyncContent
                 loading={isAuthLoading}
                 data={user}
+                // Explicitly passing null if no error, or a string if user is missing after load
                 error={!user && !isAuthLoading ? "Could not load user information." : null}
             >
                 <div className="bg-white shadow rounded p-6">
@@ -328,7 +333,8 @@ const ProfilePage: React.FC = () => {
                 isOpen={showAvatarConfirm}
                 title="Confirm Avatar Update"
                 message="Are you sure you want to update your profile picture?"
-                onConfirm={confirmAvatarUpload}
+                // Trigger mutation instead of calling async function directly
+                onConfirm={() => uploadAvatar()}
                 onCancel={cancelAvatarUpload}
                 confirmText="Update Avatar"
                 cancelText="Cancel"
@@ -339,7 +345,8 @@ const ProfilePage: React.FC = () => {
                 isOpen={showProfileConfirm}
                 title="Confirm Profile Update"
                 message="Are you sure you want to update your profile information?"
-                onConfirm={confirmProfileUpdate}
+                // Trigger mutation instead of calling async function directly
+                onConfirm={() => updateProfile()}
                 onCancel={cancelProfileUpdate}
                 confirmText="Update Profile"
                 cancelText="Cancel"

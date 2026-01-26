@@ -1,8 +1,8 @@
 // src/pages/EditProgramPage.tsx
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { useAsync } from '../hooks/useAsync';
 import { useAuth } from '../hooks/useAuth';
 import programService from '../services/programService';
 import ProgramForm from '../components/ProgramForm';
@@ -12,96 +12,102 @@ import { type ProgramBulkUpdateData } from '../types/programTypes';
 
 /**
  * Renders the page for editing an existing bug bounty program.
- * Refactored to use AsyncContent and optimized hooks, preserving original styles.
+ * Refactored to use TanStack Query for standard data fetching and mutations.
  */
 const EditProgramPage: React.FC = () => {
     const { orgSlug, progSlug } = useParams<{ orgSlug: string; progSlug: string }>();
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const [showConfirm, setShowConfirm] = useState(false);
     const { accessToken, setAccessToken } = useAuth();
 
     // -------------------------------------------------------------------------
-    // 1. FETCH Logic (GET) - Load initial data
+    // 1. Data Fetching (Get Program Details)
     // -------------------------------------------------------------------------
     
-    const fetchProgramCall = useCallback(async () => {
-        if (!orgSlug || !progSlug) throw new Error("Invalid parameters");
-        return await programService.getProgramBySlug(accessToken, orgSlug, progSlug, setAccessToken);
-    }, [accessToken, orgSlug, progSlug, setAccessToken]);
+    const { 
+        data: initialData, 
+        isLoading, 
+        error 
+    } = useQuery({
+        queryKey: ['program', orgSlug, progSlug, accessToken],
+        queryFn: () => {
+            if (!orgSlug || !progSlug) throw new Error("Invalid parameters");
+            return programService.getProgramBySlug(accessToken, orgSlug, progSlug, setAccessToken);
+        },
+        // Only run query if slugs are present
+        enabled: !!orgSlug && !!progSlug, 
+    });
 
-    const fetchOptions = useMemo(() => ({
+    // -------------------------------------------------------------------------
+    // 2. Mutation (Update Program)
+    // -------------------------------------------------------------------------
+
+    const { mutate: updateProgram, isPending: isUpdating } = useMutation({
+        mutationFn: (data: ProgramBulkUpdateData) => 
+            programService.bulkUpdate(accessToken, orgSlug!, progSlug!, data, setAccessToken),
+        
+        onSuccess: (updatedProgram) => {
+            toast.success('Program updated successfully!');
+            // Update the cache with the new data immediately
+            queryClient.setQueryData(['program', orgSlug, progSlug, accessToken], updatedProgram);
+            // Optionally invalidate to ensure freshness
+            queryClient.invalidateQueries({ queryKey: ['programs'] });
+        },
         onError: (err: any) => {
-             const message = err.response?.data?.detail || err.message || 'Failed to load program.';
-             toast.error(message);
+            const msg = err?.response?.data?.detail || err?.message || 'Failed to update program.';
+            toast.error(msg);
         }
-    }), []);
-
-    const { 
-        data: initialData,
-        loading: isLoading,
-        execute: loadProgram,
-        error
-    } = useAsync(fetchProgramCall, fetchOptions);
+    });
 
     // -------------------------------------------------------------------------
-    // 2. UPDATE Logic (PATCH) - Save changes
+    // 3. Mutation (Delete Program)
     // -------------------------------------------------------------------------
 
-    const updateProgramCall = useCallback(async (data: ProgramBulkUpdateData) => {
-        return await programService.bulkUpdate(accessToken, orgSlug!, progSlug!, data, setAccessToken);
-    }, [accessToken, orgSlug, progSlug, setAccessToken]);
-
-    const updateOptions = useMemo(() => ({
-        onSuccess: () => toast.success('Program updated successfully!'),
-        showToastError: true
-    }), []);
-
-    const { 
-        loading: isSubmitting,
-        execute: updateProgram 
-    } = useAsync(updateProgramCall, updateOptions);
-
-    // -------------------------------------------------------------------------
-    // 3. DELETE Logic (DELETE) - Remove program
-    // -------------------------------------------------------------------------
-
-    const deleteProgramCall = useCallback(async () => {
-        await programService.deleteProgram(accessToken, orgSlug!, progSlug!, setAccessToken);
-    }, [accessToken, orgSlug, progSlug, setAccessToken]);
-
-    const deleteOptions = useMemo(() => ({
+    const { mutate: deleteProgram, isPending: isDeleting } = useMutation({
+        mutationFn: () => 
+            programService.deleteProgram(accessToken, orgSlug!, progSlug!, setAccessToken),
+        
         onSuccess: () => {
+            // Close modal only after successful deletion
+            setShowConfirm(false);
+            
             toast.success('Program deleted.');
+            
+            // Invalidate lists so the deleted program is removed from views
+            queryClient.invalidateQueries({ queryKey: ['programs'] });
+            queryClient.invalidateQueries({ queryKey: ['myPrograms'] });
+            
             navigate('/programs');
         },
-        showToastError: true
-    }), [navigate]);
-
-    const { 
-        loading: isDeleting,
-        execute: deleteProgram 
-    } = useAsync(deleteProgramCall, deleteOptions);
+        onError: (err: any) => {
+            // Keep modal open so user can see error and retry
+            const msg = err?.response?.data?.detail || err?.message || 'Failed to delete program.';
+            toast.error(msg);
+        }
+    });
 
     // -------------------------------------------------------------------------
-    // 4. Effects & Handlers
+    // 4. Handlers
     // -------------------------------------------------------------------------
 
-    useEffect(() => {
-        loadProgram();
-    }, [loadProgram]);
-
+    // Marked as async to satisfy ProgramForm onSubmit type (Promise<void>)
     const handleUpdate = async (formData: any) => {
-        await updateProgram(formData);
+        updateProgram(formData);
     };
 
-    const handleDelete = () => setShowConfirm(true);
+    const handleDelete = () => {
+        setShowConfirm(true);
+    };
     
-    const confirmDelete = async () => {
-        await deleteProgram();
+    const confirmDelete = () => {
+        // Trigger mutation; modal closing is handled in onSuccess
+        deleteProgram();
+    };
+
+    const cancelDelete = () => {
         setShowConfirm(false);
     };
-
-    const cancelDelete = () => setShowConfirm(false);
 
     // -------------------------------------------------------------------------
     // 5. Render
@@ -111,7 +117,7 @@ const EditProgramPage: React.FC = () => {
         <div className="min-h-screen bg-gray-50 py-8">
             <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
                 
-                {/* AsyncContent handles loading/error states visually replacing the old manual if(isLoading) */}
+                {/* AsyncContent handles loading/error states for the initial fetching */}
                 <AsyncContent
                     loading={isLoading}
                     error={error}
@@ -129,14 +135,13 @@ const EditProgramPage: React.FC = () => {
                             <ProgramForm
                                 onSubmit={handleUpdate}
                                 initialData={initialData}
-                                isSubmitting={isSubmitting || isDeleting}
+                                isSubmitting={isUpdating || isDeleting}
                                 submitButtonText="Save Changes"
                                 renderExtraActions={() => (
                                     <button
                                         type="button"
                                         onClick={handleDelete}
-                                        disabled={isSubmitting || isDeleting}
-                                        // Restored exact classes from original (removed transition-colors)
+                                        disabled={isUpdating || isDeleting}
                                         className="bg-red-600 text-white hover:bg-red-700 px-6 py-2 rounded-md font-bold disabled:bg-gray-400 cursor-pointer"
                                     >
                                         {isDeleting ? 'Deleting...' : 'Delete Program'}

@@ -1,11 +1,10 @@
 // src/pages/MyReportsPage.tsx
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
-import { useAsync } from '../hooks/useAsync';
 import reportService from '../services/reportService';
-import { type Report, type ReportMyReportsSummary } from '../types/reportTypes';
+import { type ReportMyReportsSummary } from '../types/reportTypes';
 import MyReportsCard from '../components/MyReportsCard';
 import ReportHistoryAndComments from '../components/ReportHistoryAndComments';
 import { AsyncContent } from '../components/AsyncContent';
@@ -14,89 +13,66 @@ import { getStatusInfo } from '../utils/statusHelper';
 
 /**
  * My Reports page for managing comments on reports.
- * Refactored to use AsyncContent while strictly preserving original component styles.
+ * Refactored to use TanStack Query while strictly preserving original component styles.
  */
 const MyReportsPage: React.FC = () => {
     const [searchParams] = useSearchParams();
     const { user, accessToken, setAccessToken, isLoading: isAuthLoading } = useAuth();
     
     // --- State ---
-    const [reports, setReports] = useState<ReportMyReportsSummary[]>([]);
-    const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+    // We keep the summary selection state to highlight the sidebar card immediately
     const [selectedReportSummary, setSelectedReportSummary] = useState<ReportMyReportsSummary | null>(null);
 
     // -------------------------------------------------------------------------
     // 1. Fetch Logic: LIST of Reports (Sidebar)
     // -------------------------------------------------------------------------
 
-    const fetchReportsCall = useCallback(async () => {
-        return await reportService.getMyReports(accessToken, setAccessToken);
-    }, [accessToken, setAccessToken]);
-
-    const reportsAsyncOptions = useMemo(() => ({
-        onSuccess: (data: ReportMyReportsSummary[]) => {
-            setReports(data);
-        },
-        // We let AsyncContent handle the error display usually, but the original
-        // had a full page error for the list, so we'll handle that in render.
-    }), []);
-
     const { 
-        execute: loadReports, 
-        loading: isListLoading, 
+        data: reportsData, 
+        isLoading: isListLoading, 
         error: listError 
-    } = useAsync(fetchReportsCall, reportsAsyncOptions);
+    } = useQuery({
+        queryKey: ['myReports', accessToken],
+        queryFn: () => reportService.getMyReports(accessToken, setAccessToken),
+        enabled: !isAuthLoading && !!user,
+    });
+
+    const reports = reportsData || [];
 
     // -------------------------------------------------------------------------
     // 2. Fetch Logic: REPORT DETAILS
     // -------------------------------------------------------------------------
 
-    const fetchDetailsCall = useCallback(async (reportId: string) => {
-        return await reportService.getReportById(accessToken, reportId, setAccessToken);
-    }, [accessToken, setAccessToken]);
-
-    const detailsAsyncOptions = useMemo(() => ({
-        onSuccess: (data: Report) => {
-            setSelectedReport(data);
-        },
-        onError: (err: any) => {
-             toast.error(String(err) || 'Error loading report details');
-        }
-    }), []);
+    const selectedId = selectedReportSummary?.id;
 
     const { 
-        execute: loadReportDetails, 
-        loading: isDetailsLoading,
+        data: selectedReport, 
+        isLoading: isDetailsLoading, 
         error: detailsError 
-    } = useAsync(fetchDetailsCall, detailsAsyncOptions);
+    } = useQuery({
+        queryKey: ['report', selectedId, accessToken],
+        queryFn: () => {
+            if (!selectedId) throw new Error("No report selected");
+            return reportService.getReportById(accessToken, selectedId, setAccessToken);
+        },
+        // Only fetch details when an ID is actually selected
+        enabled: !!selectedId && !!accessToken,
+    });
 
     // -------------------------------------------------------------------------
     // 3. Effects & Helpers
     // -------------------------------------------------------------------------
 
-    // Load reports on mount
-    useEffect(() => {
-        if (!isAuthLoading && user) {
-            loadReports();
-        }
-    }, [isAuthLoading, user, loadReports]);
-
-    // Unified selection logic
-    const selectReportLogic = useCallback((reportSummary: ReportMyReportsSummary) => {
-        setSelectedReportSummary(reportSummary);
-        loadReportDetails(reportSummary.id);
-    }, [loadReportDetails]);
-
-    // Auto-select report from URL
+    // Auto-select report from URL once the list is loaded
     useEffect(() => {
         const reportId = searchParams.get('reportId');
         if (reportId && reports.length > 0 && !selectedReportSummary) {
             const report = reports.find(r => r.id === reportId);
             if (report) {
-                selectReportLogic(report);
+                setSelectedReportSummary(report);
             }
         }
-    }, [searchParams, reports, selectedReportSummary, selectReportLogic]);
+    }, [searchParams, reports, selectedReportSummary]);
 
     // Sort reports (Client-side sorting)
     const sortedReports = useMemo(() => {
@@ -104,7 +80,8 @@ const MyReportsPage: React.FC = () => {
     }, [reports]);
 
     const handleReportSelect = (reportSummary: ReportMyReportsSummary) => {
-        selectReportLogic(reportSummary);
+        // Just update the selection; useQuery will handle the fetching automatically due to dependency change
+        setSelectedReportSummary(reportSummary);
     };
 
     // -------------------------------------------------------------------------
@@ -156,7 +133,9 @@ const MyReportsPage: React.FC = () => {
                         <AsyncContent
                             loading={isDetailsLoading}
                             error={detailsError}
-                            data={true} // Always render children if no error/loading, logical check is inside
+                            // Always render children if no error/loading (logical check is inside)
+                            // Note: if nothing is selected, isLoading is false, so it renders children immediately
+                            data={true} 
                             minLoadingTime={300}
                         >
                             {selectedReportSummary ? (

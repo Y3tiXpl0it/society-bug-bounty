@@ -1,100 +1,80 @@
 // src/pages/ReportDetailPage.tsx
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import reportService from '../services/reportService';
-import { type Report } from '../types/reportTypes';
 import StatusSelector from '../components/StatusSelector';
 import SeverityInput from '../components/SeverityInput';
 import ReportHistoryAndComments from '../components/ReportHistoryAndComments';
 import StatusBadge from '../components/StatusBadge';
 import SeverityBadge from '../components/SeverityBadge';
 import { useAuth } from '../hooks/useAuth';
-import { useAsync } from '../hooks/useAsync';
 import { AsyncContent } from '../components/AsyncContent';
 
 /**
  * A page component for viewing the details of a specific report.
+ * Refactored to use TanStack Query instead of useAsync.
  */
 const ReportDetailPage: React.FC = () => {
     // --- URL Parameters ---
     const { reportId } = useParams<{ reportId: string }>();
 
     // --- Component State ---
-    const [report, setReport] = useState<Report | null>(null);
     const [openSelector, setOpenSelector] = useState<'status' | 'severity' | null>(null);
     const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState<number>(0);
 
     // --- Auth Context ---
     const { user, accessToken, setAccessToken } = useAuth();
+    const queryClient = useQueryClient();
 
     // -------------------------------------------------------------------------
-    // 1. Hook to fetch the report details
+    // 1. Data Fetching (Get Report Details)
     // -------------------------------------------------------------------------
     
-    // Defines the fetch function ensuring stability across renders using useCallback
-    const fetchReportFn = useCallback(async () => {
-        if (!reportId) throw new Error("Report ID is missing");
-        return await reportService.getReportById(accessToken, reportId, setAccessToken);
-    }, [accessToken, reportId, setAccessToken]);
-
-    // Memoizes the options to prevent unnecessary re-renders
-    const fetchReportOptions = useMemo(() => ({
-        onSuccess: (data: Report) => setReport(data),
-    }), []);
-
-    // Uses the custom useAsync hook to handle the fetching lifecycle
     const { 
-        loading: isLoading, 
-        error: fetchError, 
-        execute: fetchReport 
-    } = useAsync(fetchReportFn, fetchReportOptions);
-
-    // Triggers the fetch operation when the component mounts
-    useEffect(() => {
-        fetchReport();
-    }, [fetchReport]);
+        data: report, 
+        isLoading, 
+        error 
+    } = useQuery({
+        queryKey: ['report', reportId, accessToken],
+        queryFn: () => {
+            if (!reportId) throw new Error("Report ID is missing");
+            return reportService.getReportById(accessToken, reportId, setAccessToken);
+        },
+        enabled: !!reportId,
+    });
 
     // -------------------------------------------------------------------------
-    // 2. Hook to handle status updates
+    // 2. Mutations (Update Status & Severity)
     // -------------------------------------------------------------------------
-    const updateStatusFn = useCallback(async (newStatus: string) => {
-        if (!report) throw new Error("Report not loaded");
-        return await reportService.updateReportStatus(accessToken, report.id, newStatus, setAccessToken);
-    }, [accessToken, report, setAccessToken]);
 
-    const updateStatusOptions = useMemo(() => ({
-        onSuccess: (updatedReport: Report) => {
-            setReport(updatedReport);
+    const { mutate: updateStatus, isPending: isUpdatingStatus } = useMutation({
+        mutationFn: (newStatus: string) => {
+            if (!report) throw new Error("Report not loaded");
+            return reportService.updateReportStatus(accessToken, report.id, newStatus, setAccessToken);
+        },
+        onSuccess: (updatedReport) => {
+            // Update the cache immediately with the new report data
+            queryClient.setQueryData(['report', reportId, accessToken], updatedReport);
             setOpenSelector(null);
-            setHistoryRefreshTrigger((prev) => prev + 1); 
-        }
-    }), []);
-
-    const { 
-        execute: updateStatus, 
-        loading: isUpdatingStatus 
-    } = useAsync(updateStatusFn, updateStatusOptions);
-
-    // -------------------------------------------------------------------------
-    // 3. Hook to handle severity updates
-    // -------------------------------------------------------------------------
-    const updateSeverityFn = useCallback(async (newSeverity: any) => {
-        if (!report) throw new Error("Report not loaded");
-        return await reportService.updateReportSeverity(accessToken, report.id, newSeverity, setAccessToken);
-    }, [accessToken, report, setAccessToken]);
-
-    const updateSeverityOptions = useMemo(() => ({
-        onSuccess: (updatedReport: Report) => {
-            setReport(updatedReport);
-            setOpenSelector(null);
+            // Trigger refresh of history component to show the new status change event
             setHistoryRefreshTrigger((prev) => prev + 1);
         }
-    }), []);
+    });
 
-    const { 
-        execute: updateSeverity, 
-        loading: isUpdatingSeverity 
-    } = useAsync(updateSeverityFn, updateSeverityOptions);
+    const { mutate: updateSeverity, isPending: isUpdatingSeverity } = useMutation({
+        mutationFn: (newSeverity: any) => {
+            if (!report) throw new Error("Report not loaded");
+            return reportService.updateReportSeverity(accessToken, report.id, newSeverity, setAccessToken);
+        },
+        onSuccess: (updatedReport) => {
+            // Update the cache immediately
+            queryClient.setQueryData(['report', reportId, accessToken], updatedReport);
+            setOpenSelector(null);
+            // Trigger refresh of history component
+            setHistoryRefreshTrigger((prev) => prev + 1);
+        }
+    });
 
     // --- Event Handlers ---
 
@@ -107,10 +87,11 @@ const ReportDetailPage: React.FC = () => {
     };
 
     // --- Helper Logic ---
-    // Determines if the current user has administrative rights for the organization associated with this report
+    
+    // Determines if the current user has administrative rights for the organization
     const isOrgAdmin = report && user?.organizations?.some(org => org.id === report.program.organization.id);
     
-    // checks if the associated program has been soft-deleted
+    // Checks if the associated program has been soft-deleted (program is null/missing)
     const isProgramDeleted = report && !report.program;
 
     // --- Render Logic ---
@@ -121,7 +102,7 @@ const ReportDetailPage: React.FC = () => {
                 
                 <AsyncContent
                     loading={isLoading}
-                    error={fetchError}
+                    error={error}
                     data={report}
                     minLoadingTime={300}
                 >

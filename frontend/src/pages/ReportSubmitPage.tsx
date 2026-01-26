@@ -1,66 +1,61 @@
-// frontend/src/pages/ReportSubmitPage.tsx
-import React, { useState, useEffect, useCallback } from 'react';
+// src/pages/ReportSubmitPage.tsx
+import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { useAuth } from '../hooks/useAuth';
-import { useAsync } from '../hooks/useAsync'; // Centralized hook
 import { AsyncContent } from '../components/AsyncContent';
 import programService from '../services/programService';
-import attachmentService from '../services/attachmentService'; // Restored
+import attachmentService from '../services/attachmentService';
 import ReportSubmitForm from '../components/ReportForm';
 import ConfirmationModal from '../components/ConfirmationModal';
-import { apiPatch } from '../utils/apiClient'; // Restored
+import { apiPatch } from '../utils/apiClient';
 import imageUploadService from '../utils/imageUploadService';
 import { replaceDataUrlsInMarkdown } from '../utils/markdownUtils';
 
-// Default options for useAsync hooks
-const DEFAULT_OPTIONS = {};
-
+/**
+ * Renders the page for submitting a new vulnerability report.
+ * Refactored to use TanStack Query and handle modal state based on mutation success.
+ */
 const ReportSubmitPage: React.FC = () => {
     const navigate = useNavigate();
     const { orgSlug, progSlug } = useParams<{ orgSlug: string; progSlug: string }>();
     const { accessToken, setAccessToken } = useAuth();
 
+    const [showConfirm, setShowConfirm] = useState(false);
+    
     // State to hold form data temporarily before confirmation
     const [pendingFormData, setPendingFormData] = useState<{
         formData: FormData;
-        dataUrls: string[];
         filenames: string[];
     } | null>(null);
 
-    const [showConfirm, setShowConfirm] = useState(false);
+    // -------------------------------------------------------------------------
+    // 1. Data Fetching (Get Program Details)
+    // -------------------------------------------------------------------------
 
-    // -------------------------------------------------------------------------
-    // 1. Fetch Program Details (using useAsync)
-    // -------------------------------------------------------------------------
-    const getProgramData = useCallback(async () => {
-        if (!orgSlug || !progSlug) throw new Error("Missing parameters");
-        return await programService.getProgramBySlug(accessToken, orgSlug, progSlug, setAccessToken);
-    }, [accessToken, orgSlug, progSlug, setAccessToken]);
-    
     const { 
         data: program, 
-        loading: isLoading, 
-        error: fetchError,
-        execute: fetchProgram 
-    } = useAsync(getProgramData, DEFAULT_OPTIONS);
-
-    useEffect(() => {
-        fetchProgram();
-    }, [fetchProgram]);
+        isLoading, 
+        error 
+    } = useQuery({
+        queryKey: ['program', orgSlug, progSlug, accessToken],
+        queryFn: () => {
+            if (!orgSlug || !progSlug) throw new Error("Missing parameters");
+            return programService.getProgramBySlug(accessToken, orgSlug, progSlug, setAccessToken);
+        },
+        enabled: !!orgSlug && !!progSlug,
+    });
 
     // -------------------------------------------------------------------------
-    // 2. Submit Logic (Restored original logic wrapped in useAsync)
+    // 2. Mutation (Submit Report & Process Images)
     // -------------------------------------------------------------------------
-    const { 
-        execute: submitReport, 
-        loading: isSubmitting 
-    } = useAsync(
-        async (data: { formData: FormData; filenames: string[] }) => {
+
+    const { mutate: submitReport, isPending: isSubmitting } = useMutation({
+        mutationFn: async (data: { formData: FormData; filenames: string[] }) => {
             const { formData, filenames } = data;
 
             // Step 1: Upload the report with images embedded in FormData (POST)
-            // This creates the report and uploads attachments in one go based on backend logic
             const result = await imageUploadService.upload(
                 `/programs/${orgSlug}/${progSlug}/reports`,
                 formData,
@@ -68,7 +63,7 @@ const ReportSubmitPage: React.FC = () => {
                 setAccessToken
             );
 
-            // Step 2: If there are images, we need to fix the Markdown URLs
+            // Step 2: If there are images, fix the Markdown URLs
             if (filenames.length > 0) {
                 try {
                     // Fetch the newly created attachments for this report
@@ -101,45 +96,53 @@ const ReportSubmitPage: React.FC = () => {
                     const updatedDescription = replaceDataUrlsInMarkdown(result.description, urlMap);
 
                     // Step 3: Update the report with the fixed Markdown (PATCH)
-                    const updatedData = {
-                        description: updatedDescription,
-                    };
+                    await apiPatch(
+                        `/reports/${result.id}`, 
+                        accessToken, 
+                        { description: updatedDescription }, 
+                        setAccessToken
+                    );
+                    
+                    // Return the result with updated description just in case needed
+                    return { ...result, description: updatedDescription };
 
-                    await apiPatch(`/reports/${result.id}`, accessToken, updatedData, setAccessToken);
                 } catch (replaceError) {
                     console.error('Error replacing data URLs:', replaceError);
-                    // We don't throw here to avoid failing the whole submission if just image replacement fails,
-                    // but you could throw if strict consistency is required.
+                    // Note: We don't throw here to avoid failing the whole submission 
+                    // if just image replacement fails. The report exists.
                 }
             }
             return result;
         },
-        {
-            onSuccess: () => {
-                toast.success('Report submitted successfully!');
-                navigate(`/programs/${orgSlug}/${progSlug}`);
-            },
+        onSuccess: () => {
+            // ONLY close the modal and navigate on success
+            setShowConfirm(false);
+            setPendingFormData(null);
+            
+            toast.success('Report submitted successfully!');
+            navigate(`/programs/${orgSlug}/${progSlug}`);
+        },
+        onError: (err: any) => {
+            // Keep modal open so user can try again or see the error
+            const msg = err?.response?.data?.detail || err?.message || 'Failed to submit report.';
+            toast.error(msg);
         }
-    );
+    });
 
-    // --- Event Handlers ---
+    // -------------------------------------------------------------------------
+    // 3. Handlers
+    // -------------------------------------------------------------------------
 
-    const handleSubmitReport = async (formData: FormData, dataUrls: string[], filenames: string[]) => {
-        // Store data and show confirmation modal
-        setPendingFormData({ formData, dataUrls, filenames });
+    const handleSubmitReport = async (formData: FormData, filenames: string[]) => {
+        setPendingFormData({ formData, filenames });
         setShowConfirm(true);
     };
 
-    const confirmSubmit = async () => {
-        if (pendingFormData && program) {
-            // Execute the async operation
-            await submitReport({ 
-                formData: pendingFormData.formData, 
-                filenames: pendingFormData.filenames 
-            });
-            setShowConfirm(false); 
+    const confirmSubmit = () => {
+        if (pendingFormData) {
+            submitReport(pendingFormData);
         } else {
-            toast.error('Missing form data or program info.');
+            toast.error('Missing form data.');
         }
     };
 
@@ -149,7 +152,7 @@ const ReportSubmitPage: React.FC = () => {
     };
 
     // -------------------------------------------------------------------------
-    // 3. Render Logic
+    // 4. Render
     // -------------------------------------------------------------------------
 
     return (
@@ -158,8 +161,9 @@ const ReportSubmitPage: React.FC = () => {
                 
                 <AsyncContent
                     loading={isLoading}
-                    error={fetchError}
+                    error={error}
                     data={program}
+                    minLoadingTime={300}
                 >
                     {program && (
                         <>

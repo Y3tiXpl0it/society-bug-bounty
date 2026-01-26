@@ -1,7 +1,7 @@
 // src/pages/ManageProgramsPage.tsx
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAsync } from '../hooks/useAsync';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
 import programService from '../services/programService';
 import { type ProgramSummary } from '../types/programTypes';
@@ -10,64 +10,47 @@ import { AsyncContent } from '../components/AsyncContent';
 
 /**
  * A page component for organization members to view and manage their bug bounty programs.
- * Refactored to use AsyncContent while preserving exact original styles.
+ * Refactored to use TanStack Query while preserving exact original styles.
  */
 const ManageProgramsPage: React.FC = () => {
     const navigate = useNavigate();
     const { user, accessToken, setAccessToken, isLoading: isAuthLoading } = useAuth();
     
-    // Stores the list of programs retrieved from the API
-    const [programs, setPrograms] = useState<ProgramSummary[]>([]);
-
     // -------------------------------------------------------------------------
-    // 1. Fetch Logic (Memoized)
+    // 1. Data Fetching (TanStack Query)
     // -------------------------------------------------------------------------
-
-    const fetchProgramsCall = useCallback(async () => {
-        // Verifies if the user is a member of an organization
-        const isOrgMember = user?.organizations && user.organizations.length > 0;
-        
-        if (!isOrgMember) {
-            throw new Error('You must be a member of an organization to manage programs.');
-        }
-
-        // Requests the list of programs from the service
-        return await programService.getMyPrograms(accessToken, setAccessToken);
-    }, [user, accessToken, setAccessToken]);
-
-    const asyncOptions = useMemo(() => ({
-        onSuccess: (data: ProgramSummary[]) => {
-            setPrograms(data);
-        },
-        onError: (err: any) => {
-            const message = err.message || 'Failed to load your programs.';
-            // Only log non-user errors
-            if (message !== 'You must be a member of an organization to manage programs.') {
-                console.error(err);
-            }
-        }
-    }), []);
 
     const { 
-        execute: fetchPrograms, 
-        loading, 
-        error,
-        data 
-    } = useAsync(fetchProgramsCall, asyncOptions);
+        data, 
+        isLoading: isLoadingPrograms, 
+        error 
+    } = useQuery({
+        // Unique key for caching. Depends on the token.
+        queryKey: ['myPrograms', accessToken],
+        
+        queryFn: async () => {
+            // Verifies if the user is a member of an organization
+            const isOrgMember = user?.organizations && user.organizations.length > 0;
+            
+            if (!isOrgMember) {
+                // This error will be caught by AsyncContent via the error object
+                throw new Error('You must be a member of an organization to manage programs.');
+            }
+
+            // Requests the list of programs from the service
+            return await programService.getMyPrograms(accessToken, setAccessToken);
+        },
+        
+        // Only run the query once the user authentication is resolved and user exists
+        enabled: !isAuthLoading && !!user,
+        
+        // Optional: Keep data fresh for a bit, or refetch on window focus (defaults)
+    });
+
+    const programs = data || [];
 
     // -------------------------------------------------------------------------
-    // 2. Effects
-    // -------------------------------------------------------------------------
-
-    // Initiates the data fetch once authentication is confirmed
-    useEffect(() => {
-        if (!isAuthLoading && user) {
-            fetchPrograms();
-        }
-    }, [isAuthLoading, user, fetchPrograms]);
-
-    // -------------------------------------------------------------------------
-    // 3. Handlers
+    // 2. Handlers
     // -------------------------------------------------------------------------
 
     const handleCreateProgram = () => navigate('/create-program');
@@ -81,7 +64,7 @@ const ManageProgramsPage: React.FC = () => {
     };
 
     // -------------------------------------------------------------------------
-    // 4. Render
+    // 3. Render
     // -------------------------------------------------------------------------
 
     return (
@@ -100,13 +83,12 @@ const ManageProgramsPage: React.FC = () => {
 
                 {/* AsyncContent handles spinner and errors */}
                 <AsyncContent
-                    loading={loading || isAuthLoading}
+                    loading={isLoadingPrograms || isAuthLoading}
                     error={error}
-                    data={data}
+                    data={programs}
                     minLoadingTime={300}
                 >
                     {programs.length === 0 ? (
-                        // RESTORED: Exact original empty state style (plain text, no inner button)
                         <div className="text-center py-10 px-6 bg-white shadow rounded-lg">
                             <p>You haven't created any programs yet. Start by creating one!</p>
                         </div>

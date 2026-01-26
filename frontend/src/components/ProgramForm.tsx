@@ -408,7 +408,7 @@ const ProgramForm: React.FC<ProgramFormProps> = ({
                                 onClick={handleAddAsset}
                                 className="text-indigo-600 hover:text-indigo-800 font-semibold cursor-pointer"
                             >
-                                + Add another asset
+                                + Add asset
                             </button>
                         </div>
                     </div>

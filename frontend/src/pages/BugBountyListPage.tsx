@@ -1,12 +1,10 @@
 // src/pages/BugBountyList.tsx
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import toast from 'react-hot-toast';
+import React, { useState } from 'react';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
-import { useAsync } from '../hooks/useAsync';
 import ProgramCard from '../components/ProgramCard';
 import { AsyncContent } from '../components/AsyncContent';
 import programService from '../services/programService';
-import { type ProgramSummary } from '../types/programTypes';
 
 /**
  * Renders the public-facing list of all active bug bounty programs.
@@ -14,48 +12,42 @@ import { type ProgramSummary } from '../types/programTypes';
  */
 const BugBountyList: React.FC = () => {
     // --- Component State ---
-    const [programs, setPrograms] = useState<ProgramSummary[]>([]);
+    // Only UI state (current page) is needed locally; data state is managed by React Query.
     const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(0);
     const { accessToken, setAccessToken } = useAuth();
 
-    const LIMIT = 10; // Number of programs to fetch per page.
+    const LIMIT = 10; 
 
     // -------------------------------------------------------------------------
-    // 1. Hook to fetch programs using useAsync (Memoized)
+    // 1. Data Fetching (TanStack Query)
     // -------------------------------------------------------------------------
     
-    // Define the fetch function with useCallback to prevent unnecessary re-renders
-    const fetchProgramsData = useCallback(async () => {
-        return await programService.getAllPrograms(accessToken, currentPage, LIMIT, setAccessToken);
-    }, [accessToken, currentPage, setAccessToken]);
-
-    // Define async options with useMemo
-    const asyncOptions = useMemo(() => ({
-        onSuccess: (data: any) => {
-            setPrograms(data.programs);
-            setTotalPages(Math.ceil(data.total / LIMIT));
-        },
-        onError: (err: any) => {
-            const message = err.response?.data?.detail || err.response?.data?.message || err.message || 'Failed to load programs.';
-            toast.error(message);
-        }
-    }), []);
-
     const { 
-        execute: loadPrograms, 
-        loading: isLoading, 
+        data, 
+        isLoading, 
         error, 
-        data 
-    } = useAsync(fetchProgramsData, asyncOptions);
-
-    // Load programs when component mounts or fetch dependency changes
-    useEffect(() => {
-        loadPrograms();
-    }, [loadPrograms]);
+        isPlaceholderData 
+    } = useQuery({
+        // Unique key for caching: refetches automatically when page or token changes
+        queryKey: ['programs', currentPage, accessToken],
+        
+        // Fetcher function
+        queryFn: () => programService.getAllPrograms(accessToken, currentPage, LIMIT, setAccessToken),
+        
+        // Keeps the previous page data visible while the new page is being fetched in the background
+        placeholderData: keepPreviousData, 
+    });
 
     // -------------------------------------------------------------------------
-    // 2. Event Handlers
+    // 2. Derived Data
+    // -------------------------------------------------------------------------
+
+    // Safely extract data or default to empty values
+    const programs = data?.programs || [];
+    const totalPages = data?.total ? Math.ceil(data.total / LIMIT) : 0;
+
+    // -------------------------------------------------------------------------
+    // 3. Event Handlers
     // -------------------------------------------------------------------------
 
     const handlePrevPage = () => {
@@ -63,11 +55,14 @@ const BugBountyList: React.FC = () => {
     };
 
     const handleNextPage = () => {
-        setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+        // Prevent navigation if we are already fetching the next page or reached the end
+        if (!isPlaceholderData && currentPage < totalPages) {
+            setCurrentPage((prev) => prev + 1);
+        }
     };
 
     // -------------------------------------------------------------------------
-    // 3. Render Logic
+    // 4. Render Logic
     // -------------------------------------------------------------------------
 
     return (
@@ -75,21 +70,22 @@ const BugBountyList: React.FC = () => {
             <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h1 className="text-3xl font-bold mb-6">Programs</h1>
                 
-                {/* Wrap content in AsyncContent to handle Loading, Error, and Network states automatically */}
                 <AsyncContent
                     loading={isLoading}
                     error={error}
                     data={data}
                     minLoadingTime={300}
-                    keepDataWhileLoading={false}
                 >
                     {programs.length === 0 ? (
                         <div className="text-center py-10 px-6 bg-white shadow rounded-lg">
                             <p>No programs found.</p>
                         </div>
                     ) : (
-                        <div className="space-y-4">
-                            {programs.map((program) => <ProgramCard key={program.id} program={program} />)}
+                        // Apply opacity transition when background fetching occurs (isPlaceholderData is true)
+                        <div className={`space-y-4 transition-opacity duration-200 ${isPlaceholderData ? 'opacity-50' : 'opacity-100'}`}>
+                            {programs.map((program: any) => (
+                                <ProgramCard key={program.id} program={program} />
+                            ))}
                         </div>
                     )}
 
@@ -108,7 +104,8 @@ const BugBountyList: React.FC = () => {
                             </span>
                             <button
                                 onClick={handleNextPage}
-                                disabled={currentPage === totalPages}
+                                // Disable button if on last page or currently fetching next page data
+                                disabled={currentPage === totalPages || isPlaceholderData}
                                 className="px-4 py-2 bg-white border border-gray-300 rounded-md disabled:opacity-50 hover:bg-gray-50 transition-colors"
                             >
                                 {'>'}

@@ -1,8 +1,8 @@
 // src/pages/CreateProgramPage.tsx
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { useAsync } from '../hooks/useAsync';
 import { useAuth } from '../hooks/useAuth';
 import programService from '../services/programService';
 import ProgramForm from '../components/ProgramForm';
@@ -10,74 +10,68 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import { AsyncContent } from '../components/AsyncContent';
 import type { ProgramCreateData, ProgramBulkUpdateData } from '../types/programTypes';
 
-// Definimos opciones por defecto constantes para evitar recreación de objetos
-const DEFAULT_FETCH_OPTIONS = {};
-
 /**
  * Renders the page for creating a new bug bounty program.
- * Refactored to use AsyncContent for loading states and optimized hooks.
+ * Refactored to use TanStack Query for standard data fetching and mutations.
  */
 const CreateProgramPage: React.FC = () => {
     const navigate = useNavigate();
+    const queryClient = useQueryClient(); // Optional: Used if you want to invalidate cache after create
     const [showConfirm, setShowConfirm] = useState(false);
     const [pendingFormData, setPendingFormData] = useState<ProgramCreateData | null>(null);
     const { accessToken, setAccessToken } = useAuth();
 
     // -------------------------------------------------------------------------
-    // 1. Hook to FETCH initial data (organizations/programs)
+    // 1. Data Fetching (Get Organizations/My Programs)
     // -------------------------------------------------------------------------
     
-    const fetchOrgsCall = useCallback(async () => {
-        return await programService.getMyPrograms(accessToken, setAccessToken); 
-    }, [accessToken, setAccessToken]);
-
     const { 
-        execute: loadOrgs, 
-        loading: loadingOrgs, 
-        error: errorOrgs, 
-        data: organizations 
-    } = useAsync(fetchOrgsCall, DEFAULT_FETCH_OPTIONS);
-
-    useEffect(() => {
-        loadOrgs();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); 
+        data: organizations, 
+        isLoading: loadingOrgs, 
+        error: errorOrgs 
+    } = useQuery({
+        // Cache key: depends on token. If token changes, it refetches.
+        queryKey: ['myPrograms', accessToken],
+        queryFn: () => programService.getMyPrograms(accessToken, setAccessToken),
+    });
 
     // -------------------------------------------------------------------------
-    // 2. Hook TO CREATE program
+    // 2. Mutation (Create Program)
     // -------------------------------------------------------------------------
-    
-    const createProgramCall = useCallback(async (data: ProgramCreateData) => {
-        return await programService.createProgram(accessToken, data, setAccessToken);
-    }, [accessToken, setAccessToken]);
 
-    const asyncOptions = useMemo(() => ({
+    const { mutate: createProgram, isPending: isSubmitting } = useMutation({
+        mutationFn: (newProgramData: ProgramCreateData) => 
+            programService.createProgram(accessToken, newProgramData, setAccessToken),
+        
         onSuccess: () => {
+            setShowConfirm(false);
+            setPendingFormData(null);
+
             toast.success('Program created successfully!');
+            
+            queryClient.invalidateQueries({ queryKey: ['programs'] });
+            queryClient.invalidateQueries({ queryKey: ['myPrograms'] });
+            
             navigate('/programs');
         },
-        showToastError: true
-    }), [navigate]);
-
-    const { execute: createProgram, loading: isSubmitting } = useAsync(
-        createProgramCall,
-        asyncOptions
-    );
+        onError: (error: any) => {
+            const msg = error?.response?.data?.message || 'Failed to create program';
+            toast.error(msg);
+        }
+    });
 
     // -------------------------------------------------------------------------
     // 3. Handlers
     // -------------------------------------------------------------------------
     
-    const handleCreateProgram = useCallback(async (formData: ProgramCreateData | ProgramBulkUpdateData) => {
+    const handleCreateProgram = async (formData: ProgramCreateData | ProgramBulkUpdateData) => {
         setPendingFormData(formData as ProgramCreateData);
         setShowConfirm(true);
-    }, []);
+    };
 
-    const confirmSubmit = async () => {
+    const confirmSubmit = () => {
         if (pendingFormData) {
-            setShowConfirm(false); 
-            await createProgram(pendingFormData);
-            setPendingFormData(null);
+            createProgram(pendingFormData);
         }
     };
 
@@ -95,7 +89,7 @@ const CreateProgramPage: React.FC = () => {
             <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h1 className="text-3xl font-bold mb-6">Create a New Program</h1>
 
-                {/* AsyncContent wraps the form to ensure basic data is loaded before interaction */}
+                {/* AsyncContent handles loading/error for the initial data required to render the form */}
                 <AsyncContent
                     loading={loadingOrgs}
                     error={errorOrgs}
