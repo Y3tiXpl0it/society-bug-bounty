@@ -71,15 +71,15 @@ const LoginPage: React.FC = () => {
         }
     }, [location.search, processLogin]);
 
-    const handleGoogleLogin = async () => {
-        try {
-            const url = await authService.getGoogleAuthUrl();
+    const { mutate: loginWithGoogle } = useMutation({
+        mutationFn: authService.getGoogleAuthUrl,
+        onSuccess: (url) => {
             window.location.href = url;
-        } catch (error) {
-            console.error("Failed to get auth URL", error);
+        },
+        onError: () => {
             toast.error("Could not connect to Google Login.");
         }
-    };
+    });
 
     // -------------------------------------------------------------------------
     // 3. Render
@@ -118,7 +118,7 @@ const LoginPage: React.FC = () => {
                     {/* Google OAuth sign-in button */}
                     <div className="mt-8">
                         <button
-                            onClick={handleGoogleLogin}
+                            onClick={() => loginWithGoogle()}
                             disabled={isProcessing}
                             className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 hover:cursor-pointer md:py-4 md:text-lg shadow-md transition-all duration-200"
                         >

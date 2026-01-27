@@ -16,7 +16,7 @@ import type { ProgramCreateData, ProgramBulkUpdateData } from '../types/programT
  */
 const CreateProgramPage: React.FC = () => {
     const navigate = useNavigate();
-    const queryClient = useQueryClient(); // Optional: Used if you want to invalidate cache after create
+    const queryClient = useQueryClient();
     const [showConfirm, setShowConfirm] = useState(false);
     const [pendingFormData, setPendingFormData] = useState<ProgramCreateData | null>(null);
     const { accessToken, setAccessToken } = useAuth();

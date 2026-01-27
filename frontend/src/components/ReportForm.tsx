@@ -6,7 +6,7 @@ import MarkdownEditor from './MarkdownEditor';
 import { useMarkdownEditorWithAttachments } from '../hooks/useMarkdownEditorWithAttachments';
 
 interface ReportSubmitFormProps {
-    onSubmit: (payload: FormData, filenames: string[]) => Promise<void>;
+    onSubmit: (payload: FormData, filenames: string[]) => void
     isSubmitting: boolean;
     programName: string;
     organizationName: string;

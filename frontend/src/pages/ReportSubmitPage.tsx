@@ -108,8 +108,11 @@ const ReportSubmitPage: React.FC = () => {
 
                 } catch (replaceError) {
                     console.error('Error replacing data URLs:', replaceError);
-                    // Note: We don't throw here to avoid failing the whole submission 
-                    // if just image replacement fails. The report exists.
+                    
+                    toast("Report submitted. However, image URL replacement failed.", {
+                        icon: '⚠️',
+                        duration: 5000,
+                    });
                 }
             }
             return result;
@@ -133,7 +136,7 @@ const ReportSubmitPage: React.FC = () => {
     // 3. Handlers
     // -------------------------------------------------------------------------
 
-    const handleSubmitReport = async (formData: FormData, filenames: string[]) => {
+    const handleSubmitReport = (formData: FormData, filenames: string[]) => {
         setPendingFormData({ formData, filenames });
         setShowConfirm(true);
     };
