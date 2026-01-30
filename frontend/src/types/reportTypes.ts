@@ -32,6 +32,7 @@ export interface Report {
     updated_at: string; // datetime
     program: ProgramSummary;
     assets: Asset[];
+    attachments: Attachment[];
 }
 
 /**

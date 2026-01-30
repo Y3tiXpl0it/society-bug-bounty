@@ -2,7 +2,7 @@
 import uuid
 from fastapi import APIRouter, Depends, Form, File, UploadFile, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from sqlalchemy.orm import attributes
 from app.core.config import settings
 from app.core.database import get_session
 from app.core.dependencies import get_current_active_user, get_authorized_report, can_update_report_status, can_update_own_report_details, can_update_own_comment, get_connection_manager
@@ -13,7 +13,8 @@ from app.src.reports.schemas import ReportResponse, ReportCommentResponse, Repor
 from app.src.reports.models import Report, ReportEventType
 from app.src.attachments.models import EntityType
 from app.src.attachments.schemas import AttachmentResponse
-
+from app.src.attachments.service import AttachmentService
+from fastapi.responses import FileResponse
 
 router = APIRouter(prefix="/reports", tags=["Reports"])
 
@@ -35,8 +36,23 @@ async def get_report_details(
 ):
     """Gets the details of a specific report."""
     report, user = report_user
-    service = ReportService(session)
-    return await service.get_report_by_id(report_id)
+
+    # 1. Load attachments for the report
+    attachment_service = AttachmentService(session)
+    attachments_db = await attachment_service.get_attachments_by_entity(
+        EntityType.REPORT, 
+        report.id
+    )
+
+    # 2. Inyectar los adjuntos SIN activar la carga de SQLAlchemy
+    # Esto le dice a SQLAlchemy: "Confía en mí, estos son los datos, no verifiques el estado anterior"
+    attributes.set_committed_value(report, "attachments", attachments_db)
+
+    # 3. Transform report model to schema
+    # Ahora Pydantic leerá 'report.attachments' de memoria sin problemas
+    response = ReportResponse.model_validate(report)
+
+    return response
 
 
 @router.patch("/{report_id}", response_model=ReportResponse)
@@ -77,8 +93,6 @@ async def get_report_comments(
     comments = await service.get_report_comments(report_id)
 
     # Load attachments for each comment
-    from app.src.attachments.service import AttachmentService
-    from app.src.attachments.schemas import AttachmentResponse
     attachment_service = AttachmentService(session)
 
     response_comments = []
@@ -118,8 +132,6 @@ async def add_comment_to_report(
     service = ReportService(session, connection_manager)
     
     # Import attachment service locally to avoid circular imports
-    from app.src.attachments.service import AttachmentService
-    from app.src.attachments.schemas import AttachmentResponse
     attachment_service = AttachmentService(session)
 
     comment_data = ReportCommentCreate(content=content)
@@ -182,9 +194,6 @@ async def update_comment(
     updated_comment = await service.update_comment(comment_id, update_data, current_user)
 
     # Load attachments for the response
-    from app.src.attachments.service import AttachmentService
-    from app.src.attachments.schemas import AttachmentResponse
-    from app.src.attachments.models import EntityType
     attachment_service = AttachmentService(session)
     attachments = await attachment_service.get_attachments_by_entity(EntityType.REPORT_COMMENT, updated_comment.id)
 
@@ -222,8 +231,6 @@ async def get_report_attachments(
     Requires authentication and authorization (hacker or org member).
     """
     report, user = report_user
-    from app.src.attachments.service import AttachmentService
-    from app.src.attachments.models import EntityType
     service = AttachmentService(session)
     return await service.get_attachments_by_entity(EntityType.REPORT, report_id)
 
@@ -240,8 +247,6 @@ async def get_comment_attachments(
     Requires authentication and authorization (hacker or org member).
     """
     report, user = report_user
-    from app.src.attachments.service import AttachmentService
-    from app.src.attachments.models import EntityType
     service = AttachmentService(session)
     return await service.get_attachments_by_entity(EntityType.REPORT_COMMENT, comment_id)
 
@@ -271,16 +276,12 @@ async def download_report_attachment(
         logger.warning("No auth header in download request - likely direct browser fetch")
 
     report, user = report_user
-    from fastapi.responses import FileResponse
-    from app.src.attachments.service import AttachmentService
-    from app.src.attachments.models import EntityType
 
     service = AttachmentService(session)
     attachment = await service.get_attachment_by_id(attachment_id)
     if not attachment or attachment.entity_type != EntityType.REPORT or attachment.entity_id != report_id:
         raise NotFoundException("Attachment not found")
 
-    from fastapi.responses import FileResponse
     return FileResponse(
         attachment.file_path,
         media_type=attachment.mime_type,
@@ -315,16 +316,12 @@ async def download_comment_attachment(
         logger.warning("No auth header in download request - likely direct browser fetch")
 
     report, user = report_user
-    from fastapi.responses import FileResponse
-    from app.src.attachments.service import AttachmentService
-    from app.src.attachments.models import EntityType
 
     service = AttachmentService(session)
     attachment = await service.get_attachment_by_id(attachment_id)
     if not attachment or attachment.entity_type != EntityType.REPORT_COMMENT or attachment.entity_id != comment_id:
         raise NotFoundException("Attachment not found")
 
-    from fastapi.responses import FileResponse
     return FileResponse(
         attachment.file_path,
         media_type=attachment.mime_type,
@@ -343,6 +340,7 @@ async def get_report_history(
     report, current_user = report_user
     service = ReportService(session)
     events = await service.get_report_history(report_id, current_user)
+    attachment_service = AttachmentService(session)
 
     # Transform events to include user_name and handle comment events
     response_events = []
@@ -355,25 +353,30 @@ async def get_report_history(
             "created_at": event.created_at,
             "user_name": event.user.details.username if event.user else None,
             "user_avatar_url": event.user.details.avatar_url if event.user and event.user.details else None,
-            "comment": None
+            "comment": None,
+            "attachments": [] 
         }
 
-        # If it's a comment event, include the comment data
+        # Comment event handling
         if event.event_type == ReportEventType.comment and event.comment:
-            # Load attachments for the comment
-            from app.src.attachments.service import AttachmentService
-            from app.src.attachments.schemas import AttachmentResponse
-            attachment_service = AttachmentService(session)
-            attachments = await attachment_service.get_attachments_by_entity(EntityType.REPORT_COMMENT, event.comment.id)
-
+            comment_attachments = await attachment_service.get_attachments_by_entity(EntityType.REPORT_COMMENT, event.comment.id)
+            
             event_dict["comment"] = ReportCommentResponse(
                 id=event.comment.id,
                 user_id=event.comment.user_id,
                 content=event.comment.content,
                 created_at=event.comment.created_at,
                 updated_at=event.comment.updated_at,
-                attachments=[AttachmentResponse.model_validate(att) for att in attachments]
+                attachments=[AttachmentResponse.model_validate(att) for att in comment_attachments]
             )
+
+        # Report creation event handling to include report attachments
+        if event.event_type == ReportEventType.report_created:
+            report_attachments = await attachment_service.get_attachments_by_entity(EntityType.REPORT, event.report_id)
+            
+            event_dict["attachments"] = [
+                AttachmentResponse.model_validate(att) for att in report_attachments
+            ]
 
         response_events.append(ReportEventResponse(**event_dict))
 

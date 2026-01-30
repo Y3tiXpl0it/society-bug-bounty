@@ -98,6 +98,7 @@ class ReportResponse(BaseModel):
     updated_at: datetime
     program: ProgramSummary
     assets: list["ProgramAssetRead"] = []
+    attachments: list["AttachmentResponse"] = []
 
 # Schema for summary report data (used for listing reports in cards)
 class ReportSummary(BaseModel):
@@ -166,3 +167,4 @@ class ReportEventResponse(BaseModel):
     user_name: str | None = None
     user_avatar_url: str | None = None
     comment: ReportCommentResponse | None = None
+    attachments: list["AttachmentResponse"] = []
