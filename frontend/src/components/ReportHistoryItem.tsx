@@ -152,13 +152,6 @@ const ReportHistoryItem: React.FC<ReportHistoryItemProps> = ({
                     <div className="bg-white rounded-lg">
                         {event.event_type === 'report_created' && (
                             <div className="text-sm text-gray-900">
-                                <div className="font-medium">
-                                    <span className="font-bold text-gray-900">{event.user_name || 'User'}</span> submitted this report
-                                </div>
-                                <div className="text-gray-500 text-xs mt-0.5">
-                                    {new Date(event.created_at).toLocaleString()}
-                                </div>
-
                                 {/* Report Description */}
                                 <div className="mt-2 text-color-primary break-words markdown-content">
                                     <ReactMarkdown
