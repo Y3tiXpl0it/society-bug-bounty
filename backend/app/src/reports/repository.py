@@ -42,7 +42,8 @@ class ReportRepository:
                 joinedload(Report.hacker).joinedload(User.details),
                 joinedload(Report.program).joinedload(Program.organization),
                 joinedload(Report.program).joinedload(Program.rewards),
-                selectinload(Report.assets).joinedload(ProgramAsset.asset_type)
+                selectinload(Report.assets).joinedload(ProgramAsset.asset_type),
+                selectinload(Report.attachments)
             )
         )
         result = await self.session.execute(query)
@@ -59,7 +60,8 @@ class ReportRepository:
                 joinedload(Report.hacker).joinedload(User.details),
                 joinedload(Report.program).joinedload(Program.rewards),
                 joinedload(Report.program).joinedload(Program.organization),
-                selectinload(Report.assets).joinedload(ProgramAsset.asset_type)
+                selectinload(Report.assets).joinedload(ProgramAsset.asset_type),
+                selectinload(Report.attachments)
             )
         )
         result = await self.session.execute(query)
@@ -167,8 +169,7 @@ class ReportRepository:
                 setattr(report, key, value)
 
         await self.session.commit()
-        await self.session.refresh(report)
-        return report
+        return await self.get_by_id(report_id)
 
     async def list_comments_by_report(self, report_id: uuid.UUID) -> list[ReportComment]:
         """Gets all comments for a report, ordered by creation date."""

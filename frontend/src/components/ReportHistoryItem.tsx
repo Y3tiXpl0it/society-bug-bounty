@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import { decode } from 'html-entities';
 import type { ReportEvent } from '../types/reportTypes';
 import { getProgramMarkdownComponents } from '../utils/markdownComponents';
+import AttachmentList from './AttachmentList';
 import ImageModal from './ImageModal';
 import StatusBadge from './StatusBadge';
 import SeverityBadge from './SeverityBadge';
@@ -94,6 +95,10 @@ const ReportHistoryItem: React.FC<ReportHistoryItemProps> = ({
     // Check if this event should show content
     const shouldShowContent = event.event_type === 'report_created' || event.event_type === 'comment';
 
+    const currentAttachments = event.event_type === 'comment'
+        ? event.comment?.attachments
+        : (event.event_type === 'report_created' ? event.attachments : []);
+
     return (
         <div className="flex gap-4 p-4 border-b border-gray-200 last:border-b-0">
             {/* User Avatar */}
@@ -145,9 +150,17 @@ const ReportHistoryItem: React.FC<ReportHistoryItemProps> = ({
                 {/* Content for reports and comments */}
                 {shouldShowContent && (
                     <div className="bg-white rounded-lg">
-                        {event.event_type === 'report_created' && reportDescription && (
-                            <div>
-                                <div className="text-color-primary break-words markdown-content">
+                        {event.event_type === 'report_created' && (
+                            <div className="text-sm text-gray-900">
+                                <div className="font-medium">
+                                    <span className="font-bold text-gray-900">{event.user_name || 'User'}</span> submitted this report
+                                </div>
+                                <div className="text-gray-500 text-xs mt-0.5">
+                                    {new Date(event.created_at).toLocaleString()}
+                                </div>
+
+                                {/* Report Description */}
+                                <div className="mt-2 text-color-primary break-words markdown-content">
                                     <ReactMarkdown
                                         skipHtml={true}
                                         components={getProgramMarkdownComponents({ onImageClick: handleImageClick, accessToken })}
@@ -157,6 +170,12 @@ const ReportHistoryItem: React.FC<ReportHistoryItemProps> = ({
                                         {decode(reportDescription)}
                                     </ReactMarkdown>
                                 </div>
+
+                                <AttachmentList
+                                    attachments={currentAttachments}
+                                    accessToken={accessToken}
+                                    contextUrl={reportId ? `${import.meta.env.VITE_API_BASE_URL}/reports/${reportId}` : undefined}
+                                />
                             </div>
                         )}
 
@@ -172,6 +191,12 @@ const ReportHistoryItem: React.FC<ReportHistoryItemProps> = ({
                                         {decode(event.comment.content)}
                                     </ReactMarkdown>
                                 </div>
+
+                                <AttachmentList
+                                    attachments={currentAttachments}
+                                    accessToken={accessToken}
+                                    contextUrl={reportId && event.comment ? `${import.meta.env.VITE_API_BASE_URL}/reports/${reportId}/comments/${event.comment.id}` : undefined}
+                                />
                             </div>
                         )}
                     </div>
@@ -187,7 +212,7 @@ const ReportHistoryItem: React.FC<ReportHistoryItemProps> = ({
                 downloadUrl={imageModal.downloadUrl}
                 accessToken={imageModal.accessToken}
             />
-        </div>
+        </div >
     );
 };
 

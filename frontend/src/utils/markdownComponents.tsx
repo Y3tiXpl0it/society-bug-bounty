@@ -1,7 +1,7 @@
 // frontend/src/utils/markdownComponents.tsx
 import React, { useEffect, useState } from 'react';
 import type { Components } from 'react-markdown';
-import axios from 'axios';
+import attachmentService from '../services/attachmentService';
 
 interface MarkdownComponentsProps {
     onImageClick?: (src: string, alt?: string) => void;
@@ -34,14 +34,8 @@ const AuthenticatedImage: React.FC<{
             try {
                 // Check if it's an attachment URL that needs auth
                 if (src.includes('/attachments/') && src.includes('/download')) {
-                    const response = await axios.get(src, {
-                        headers: {
-                            'Authorization': `Bearer ${accessToken}`,
-                        },
-                        responseType: 'blob',
-                    });
-                    if (response.status === 200) {
-                        const blob = response.data;
+                    const blob = await attachmentService.downloadAttachment(src, accessToken ?? null);
+                    if (blob) {
                         const objectUrl = URL.createObjectURL(blob);
                         imageCache.set(src, objectUrl); // Cache the result
                         setImageSrc(objectUrl);
@@ -58,6 +52,7 @@ const AuthenticatedImage: React.FC<{
             } finally {
                 setLoading(false);
             }
+
         };
 
         fetchImage();
@@ -95,12 +90,12 @@ const AuthenticatedImage: React.FC<{
 };
 
 export const getProgramMarkdownComponents = (props?: MarkdownComponentsProps): Components => ({
-    h1: ({ children }) => <h1 style={{borderBottom: 'none', paddingLeft: 0, marginBottom: '0.5rem'}} className="text-xl font-bold text-color-primary">{children}</h1>,
-    h2: ({ children }) => <h2 style={{borderBottom: 'none', paddingLeft: 0, marginBottom: '0.5rem'}} className="text-lg font-bold text-color-primary">{children}</h2>,
-    h3: ({ children }) => <h3 style={{borderBottom: 'none', paddingLeft: 0, marginBottom: '0.5rem'}} className="text-base font-bold text-color-primary">{children}</h3>,
-    h4: ({ children }) => <h4 style={{borderBottom: 'none', paddingLeft: 0, marginBottom: '0.5rem'}} className="text-sm font-bold text-color-primary">{children}</h4>,
-    h5: ({ children }) => <h5 style={{borderBottom: 'none', paddingLeft: 0, marginBottom: '0.5rem'}} className="text-sm font-bold text-color-primary">{children}</h5>,
-    h6: ({ children }) => <h6 style={{borderBottom: 'none', paddingLeft: 0, marginBottom: '0.5rem'}} className="text-sm font-bold text-color-primary">{children}</h6>,
+    h1: ({ children }) => <h1 style={{ borderBottom: 'none', paddingLeft: 0, marginBottom: '0.5rem' }} className="text-xl font-bold text-color-primary">{children}</h1>,
+    h2: ({ children }) => <h2 style={{ borderBottom: 'none', paddingLeft: 0, marginBottom: '0.5rem' }} className="text-lg font-bold text-color-primary">{children}</h2>,
+    h3: ({ children }) => <h3 style={{ borderBottom: 'none', paddingLeft: 0, marginBottom: '0.5rem' }} className="text-base font-bold text-color-primary">{children}</h3>,
+    h4: ({ children }) => <h4 style={{ borderBottom: 'none', paddingLeft: 0, marginBottom: '0.5rem' }} className="text-sm font-bold text-color-primary">{children}</h4>,
+    h5: ({ children }) => <h5 style={{ borderBottom: 'none', paddingLeft: 0, marginBottom: '0.5rem' }} className="text-sm font-bold text-color-primary">{children}</h5>,
+    h6: ({ children }) => <h6 style={{ borderBottom: 'none', paddingLeft: 0, marginBottom: '0.5rem' }} className="text-sm font-bold text-color-primary">{children}</h6>,
     p: ({ children }) => <p className="mb-4 text-color-primary leading-relaxed">{children}</p>,
     ul: ({ children }) => <ul className="list-disc ml-6 mb-4 text-color-primary">{children}</ul>,
     ol: ({ children }) => <ol className="list-decimal ml-6 mb-4 text-color-primary">{children}</ol>,
@@ -133,7 +128,7 @@ export const getProgramMarkdownComponents = (props?: MarkdownComponentsProps): C
     hr: () => null,
     table: ({ children }) => (
         <div className="overflow-x-auto mb-4 border border-gray-200 rounded w-fit max-w-full">
-            <table className="divide-y divide-gray-200 text-left w-full"> 
+            <table className="divide-y divide-gray-200 text-left w-full">
                 {children}
             </table>
         </div>
