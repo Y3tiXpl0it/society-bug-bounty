@@ -146,6 +146,9 @@ class UserDetails(Base):
     # URL for the user's avatar image.
     avatar_url: Mapped[str | None] = mapped_column(String(255))
 
+    # Timestamp of the last username change
+    last_username_change: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
     # --- Notification preferences ---
     email_notifications_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     in_app_notifications_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
@@ -233,3 +236,17 @@ class RefreshToken(Base):
         """Revoke this token"""
         self.revoked = True
         self.revoked_at = datetime.now(timezone.utc)
+
+
+class UsernameBlocklist(Base):
+    """
+    Stores historical usernames to prevent reuse.
+    """
+    __tablename__ = "username_blocklist"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    username: Mapped[str] = mapped_column(String(24), unique=True, index=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now(), nullable=False)
+    
+    # Optional: Track which user originally held this username
+    original_user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)

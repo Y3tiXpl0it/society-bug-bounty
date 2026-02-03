@@ -1,6 +1,7 @@
 # backend/app/src/users/service.py
 
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 from app.core.config import settings
 
@@ -50,7 +51,7 @@ class UserService:
 
     async def update_user_details(self, user_id: uuid.UUID, details_update: dict) -> User | None:
         """Updates the user details for a given user ID."""
-        from app.src.users.models import UserDetails
+        from app.src.users.models import UserDetails, UsernameBlocklist
         from sqlalchemy import func
 
         # Fetch the user with details
@@ -73,6 +74,43 @@ class UserService:
             )
             if existing.scalar_one_or_none():
                 raise BadRequestException("Username already exists (case-insensitive)")
+
+            # Check blocklist
+            blocked = await self.session.execute(
+                select(UsernameBlocklist).filter(
+                    func.lower(UsernameBlocklist.username) == new_username_lower
+                )
+            )
+            if blocked.scalar_one_or_none():
+                 raise BadRequestException("Username is not available")
+
+            # Check 30-day restriction
+            if user.details.last_username_change:
+                # Use timezone-aware datetime for comparison
+                now = datetime.now(timezone.utc)
+                # Ensure last_username_change is timezone-aware before comparison
+                last_change = user.details.last_username_change
+                if last_change.tzinfo is None:
+                    last_change = last_change.replace(tzinfo=timezone.utc)
+                
+                days_since_change = (now - last_change).days
+                if days_since_change < 30:
+                    remaining_days = 30 - days_since_change
+                    raise BadRequestException(f"You can only change your username once every 30 days. Please wait {remaining_days} more days.")
+
+            # Add old username to blocklist
+            if user.details.username:
+                old_username = user.details.username
+                # Only add if it's not somehow already there (though unique constraint exists on users table, blocklist is separate)
+                # We trust the flow: if it was the current username, it shouldn't be in blocklist yet unless reused.
+                blocklist_entry = UsernameBlocklist(
+                    username=old_username,
+                    original_user_id=user.id
+                )
+                self.session.add(blocklist_entry)
+
+            # Update the timestamp
+            user.details.last_username_change = datetime.now(timezone.utc)
 
         # Update the details fields
         for key, value in details_update.items():

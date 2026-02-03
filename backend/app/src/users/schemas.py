@@ -1,5 +1,6 @@
 # backend/app/src/users/schemas.py
 import uuid
+import datetime
 from typing import Optional
 
 from fastapi_users import schemas
@@ -16,6 +17,7 @@ class UserDetailsReadSchema(BaseModel):
     username: str
     profile_info: Optional[str] = None
     avatar_url: Optional[str] = None
+    last_username_change: Optional[datetime.datetime] = None
     email_notifications_enabled: bool = True
     in_app_notifications_enabled: bool = True
 

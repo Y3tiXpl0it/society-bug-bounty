@@ -123,20 +123,16 @@ const Navbar: React.FC = () => {
     return (
         <nav className="bg-white shadow-md sticky top-0 z-50">
             <div className="w-full px-4 sm:px-6 lg:px-8">
-                {/* 1. Añadimos 'relative' aquí para que el hijo absoluto se posicione respecto a este contenedor */}
                 <div className="relative flex items-center justify-between h-16">
 
-                    {/* Contenedor Izquierdo (Logo) */}
-                    {/* Nota: Usamos z-10 para asegurar que si la pantalla se achica, el logo quede pulsable/visible sobre el centro si se tocan */}
+                    {/* Left side (Logo) */}
                     <div className="flex-shrink-0 z-10">
                         <Link to="/" className="flex items-center">
                             <img src={logoImage} alt="navbar-logo" className="h-10 w-auto object-contain" />
                         </Link>
                     </div>
 
-                    {/* Contenedor Central (Enlaces) - MODIFICADO */}
-                    {/* Eliminamos 'flex flex-grow justify-center' */}
-                    {/* Agregamos 'absolute left-1/2 -translate-x-1/2' */}
+                    {/* Center (Links) */}
                     <div className="absolute left-1/2 transform -translate-x-1/2">
                         <div className="flex items-baseline space-x-4">
                             <Link
@@ -156,10 +152,9 @@ const Navbar: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Contenedor Derecho (Perfil) */}
-                    {/* Nota: También usamos z-10 para mantenerlo interactuable */}
+                    {/* Right side (Profile) */}
                     <div className="flex items-center space-x-4 z-10">
-                        {/* Notificaciones */}
+                        {/* Notifications */}
                         {isLoggedIn && (
                             <NotificationDropdown
                                 notifications={notifications}
@@ -171,7 +166,7 @@ const Navbar: React.FC = () => {
                                 onLoadMore={loadMoreNotifications}
                             />
                         )}
-                        {/* Auth para Escritorio */}
+                        {/* Auth for Desktop */}
                         <div className="flex items-center">{renderAuthButton()}</div>
                     </div>
                 </div>
