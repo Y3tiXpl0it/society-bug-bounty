@@ -35,6 +35,7 @@ Thumbs.db
 
 # VSCode
 .vscode/
+.agent/
 
 # Prettier
 .prettierrc.json

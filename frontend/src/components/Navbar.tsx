@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import NotificationDropdown from './NotificationDropdown';
 import { useNotifications } from '../hooks/useNotifications';
+import Avatar from 'boring-avatars';
 
 import logoImage from '../assets/navbar_logo.png';
 
@@ -75,9 +76,11 @@ const Navbar: React.FC = () => {
                                 className="w-10 h-10 rounded-full object-cover"
                             />
                         ) : (
-                            <span className="font-semibold">
-                                {user.details?.username?.charAt(0).toUpperCase() || 'U'}
-                            </span>
+                            <Avatar
+                                size={40}
+                                name={user.details?.username || user.email}
+                                variant="bauhaus"
+                            />
                         )}
                     </button>
                     {isProfileMenuOpen && (
@@ -121,8 +124,8 @@ const Navbar: React.FC = () => {
         <nav className="bg-white shadow-md sticky top-0 z-50">
             <div className="w-full px-4 sm:px-6 lg:px-8">
                 {/* 1. Añadimos 'relative' aquí para que el hijo absoluto se posicione respecto a este contenedor */}
-                <div className="relative flex items-center justify-between h-16"> 
-                    
+                <div className="relative flex items-center justify-between h-16">
+
                     {/* Contenedor Izquierdo (Logo) */}
                     {/* Nota: Usamos z-10 para asegurar que si la pantalla se achica, el logo quede pulsable/visible sobre el centro si se tocan */}
                     <div className="flex-shrink-0 z-10">

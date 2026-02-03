@@ -6,6 +6,7 @@ import userService from '../services/userService';
 import toast from 'react-hot-toast';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { AsyncContent } from '../components/AsyncContent';
+import Avatar from 'boring-avatars';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -22,18 +23,18 @@ const profileSchema = z.object({
 const ProfilePage: React.FC = () => {
     // Get authentication state and hooks from useAuth
     const { user, accessToken, setAccessToken, isLoading: isAuthLoading, refreshUser } = useAuth();
-    
+
     // Local state for UI
     const [isEditing, setIsEditing] = useState(false);
-    
+
     // Initialize form.
     const [formData, setFormData] = useState({
         username: user?.details?.username || '',
         profile_info: user?.details?.profile_info || '',
     });
-    
+
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
-    
+
     // Avatar upload states
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -133,7 +134,7 @@ const ProfilePage: React.FC = () => {
             setAvatarFile(file);
             const url = URL.createObjectURL(file);
             setPreviewUrl(url);
-            setShowAvatarConfirm(true); 
+            setShowAvatarConfirm(true);
         }
     };
 
@@ -219,9 +220,11 @@ const ProfilePage: React.FC = () => {
                                         className="w-24 h-24 rounded-full object-cover"
                                     />
                                 ) : (
-                                    <span className="text-gray-500">
-                                        {user?.details?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
-                                    </span>
+                                    <Avatar
+                                        size={96}
+                                        name={user?.details?.username || user?.email}
+                                        variant="bauhaus"
+                                    />
                                 )}
                             </div>
                             {!isEditing && (
@@ -262,9 +265,8 @@ const ProfilePage: React.FC = () => {
                                         value={formData.username}
                                         onChange={handleInputChange}
                                         disabled={isSaving}
-                                        className={`w-full px-3 py-2 border rounded text-gray-900 focus:outline-none focus:border-indigo-500 focus:ring-indigo-500 ${
-                                            errors.username ? 'border-red-500' : 'border-gray-300'
-                                        }`}
+                                        className={`w-full px-3 py-2 border rounded text-gray-900 focus:outline-none focus:border-indigo-500 focus:ring-indigo-500 ${errors.username ? 'border-red-500' : 'border-gray-300'
+                                            }`}
                                     />
                                     {errors.username && <p className="mt-1 text-sm text-red-600">{errors.username}</p>}
                                 </>
@@ -284,9 +286,8 @@ const ProfilePage: React.FC = () => {
                                         disabled={isSaving}
                                         rows={4}
                                         maxLength={500}
-                                        className={`w-full px-3 py-2 border rounded text-gray-900 focus:outline-none focus:border-indigo-500 focus:ring-indigo-500 break-words ${
-                                            errors.profile_info ? 'border-red-500' : 'border-gray-300'
-                                        }`}
+                                        className={`w-full px-3 py-2 border rounded text-gray-900 focus:outline-none focus:border-indigo-500 focus:ring-indigo-500 break-words ${errors.profile_info ? 'border-red-500' : 'border-gray-300'
+                                            }`}
                                         placeholder="Tell us about yourself..."
                                     />
                                     {errors.profile_info && <p className="mt-1 text-sm text-red-600">{errors.profile_info}</p>}

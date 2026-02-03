@@ -12,6 +12,7 @@ import remarkGfm from 'remark-gfm';
 // @ts-ignore
 import rehypeFigure from 'rehype-figure';
 import { rehypePlugins } from '../utils/markdownUtils';
+import Avatar from 'boring-avatars';
 
 interface ReportHistoryItemProps {
     event: ReportEvent;
@@ -110,9 +111,11 @@ const ReportHistoryItem: React.FC<ReportHistoryItemProps> = ({
                         className="w-10 h-10 rounded-full object-cover"
                     />
                 ) : (
-                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-gray-600 border border-gray-300 font-semibold">
-                        {event.user_name?.charAt(0).toUpperCase() || 'U'}
-                    </div>
+                    <Avatar
+                        size={40}
+                        name={event.user_name || 'User'}
+                        variant="bauhaus"
+                    />
                 )}
             </div>
 
