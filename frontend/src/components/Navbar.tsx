@@ -78,7 +78,7 @@ const Navbar: React.FC = () => {
                         ) : (
                             <Avatar
                                 size={40}
-                                name={user.details?.username || user.email}
+                                name={user.id}
                                 variant="bauhaus"
                             />
                         )}

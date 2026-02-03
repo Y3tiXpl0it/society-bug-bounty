@@ -353,6 +353,7 @@ async def get_report_history(
             "created_at": event.created_at,
             "user_name": event.user.details.username if event.user else None,
             "user_avatar_url": event.user.details.avatar_url if event.user and event.user.details else None,
+            "user_id": event.user_id,
             "comment": None,
             "attachments": [] 
         }

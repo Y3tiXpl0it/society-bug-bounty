@@ -166,5 +166,6 @@ class ReportEventResponse(BaseModel):
     created_at: datetime
     user_name: str | None = None
     user_avatar_url: str | None = None
+    user_id: uuid.UUID | None = None
     comment: ReportCommentResponse | None = None
     attachments: list["AttachmentResponse"] = []

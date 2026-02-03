@@ -222,7 +222,7 @@ const ProfilePage: React.FC = () => {
                                 ) : (
                                     <Avatar
                                         size={96}
-                                        name={user?.details?.username || user?.email}
+                                        name={user?.id}
                                         variant="bauhaus"
                                     />
                                 )}

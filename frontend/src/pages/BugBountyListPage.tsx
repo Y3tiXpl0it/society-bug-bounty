@@ -5,6 +5,14 @@ import { useAuth } from '../hooks/useAuth';
 import ProgramCard from '../components/ProgramCard';
 import { AsyncContent } from '../components/AsyncContent';
 import programService from '../services/programService';
+import type { ProgramSummary } from '../types/programTypes';
+
+// Hoist static JSX to avoid re-creation on every render
+const NO_PROGRAMS_VIEW = (
+    <div className="text-center py-10 px-6 bg-white shadow rounded-lg">
+        <p>No programs found.</p>
+    </div>
+);
 
 /**
  * Renders the public-facing list of all active bug bounty programs.
@@ -16,26 +24,26 @@ const BugBountyList: React.FC = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const { accessToken, setAccessToken } = useAuth();
 
-    const LIMIT = 10; 
+    const LIMIT = 10;
 
     // -------------------------------------------------------------------------
     // 1. Data Fetching (TanStack Query)
     // -------------------------------------------------------------------------
-    
-    const { 
-        data, 
-        isLoading, 
-        error, 
-        isPlaceholderData 
+
+    const {
+        data,
+        isLoading,
+        error,
+        isPlaceholderData
     } = useQuery({
         // Unique key for caching: refetches automatically when page or token changes
         queryKey: ['programs', currentPage, accessToken],
-        
+
         // Fetcher function
         queryFn: () => programService.getAllPrograms(accessToken, currentPage, LIMIT, setAccessToken),
-        
+
         // Keeps the previous page data visible while the new page is being fetched in the background
-        placeholderData: keepPreviousData, 
+        placeholderData: keepPreviousData,
     });
 
     // -------------------------------------------------------------------------
@@ -69,7 +77,7 @@ const BugBountyList: React.FC = () => {
         <div className="h-auto bg-gray-50 py-8">
             <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h1 className="text-3xl font-bold mb-6">Programs</h1>
-                
+
                 <AsyncContent
                     loading={isLoading}
                     error={error}
@@ -77,20 +85,18 @@ const BugBountyList: React.FC = () => {
                     minLoadingTime={300}
                 >
                     {programs.length === 0 ? (
-                        <div className="text-center py-10 px-6 bg-white shadow rounded-lg">
-                            <p>No programs found.</p>
-                        </div>
+                        NO_PROGRAMS_VIEW
                     ) : (
                         // Apply opacity transition when background fetching occurs (isPlaceholderData is true)
                         <div className={`space-y-4 transition-opacity duration-200 ${isPlaceholderData ? 'opacity-50' : 'opacity-100'}`}>
-                            {programs.map((program: any) => (
+                            {programs.map((program: ProgramSummary) => (
                                 <ProgramCard key={program.id} program={program} />
                             ))}
                         </div>
                     )}
 
                     {/* --- Pagination Controls --- */}
-                    {totalPages > 1 && (
+                    {totalPages > 1 ? (
                         <div className="flex justify-center items-center mt-8 space-x-4">
                             <button
                                 onClick={handlePrevPage}
@@ -111,7 +117,7 @@ const BugBountyList: React.FC = () => {
                                 {'>'}
                             </button>
                         </div>
-                    )}
+                    ) : null}
                 </AsyncContent>
             </div>
         </div>

@@ -113,7 +113,7 @@ const ReportHistoryItem: React.FC<ReportHistoryItemProps> = ({
                 ) : (
                     <Avatar
                         size={40}
-                        name={event.user_name || 'User'}
+                        name={event.user_id || 'User'}
                         variant="bauhaus"
                     />
                 )}

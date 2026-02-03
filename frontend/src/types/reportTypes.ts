@@ -98,6 +98,7 @@ export interface ReportEvent {
     created_at: string;
     user_name: string | null;
     user_avatar_url: string | null;
+    user_id: string | null;
     comment: ReportComment | null;
     attachments?: Attachment[];
 }
