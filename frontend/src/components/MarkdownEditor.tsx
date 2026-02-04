@@ -2,6 +2,7 @@
 
 // Import necessary React hooks and components
 import React, { useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 // Markdown editor component from @uiw/react-markdown-editor
 import MarkdownEditor from '@uiw/react-markdown-editor';
 // ReactMarkdown for rendering markdown in preview
@@ -68,6 +69,16 @@ const CustomMarkdownEditor: React.FC<MarkdownEditorProps> = ({
     onFileAdd,
     accessToken
 }) => {
+    const { t } = useTranslation();
+
+    // Use props or fall back to translated defaults
+    const finalLabel = label === "Content" ? t('components.markdownEditor.contentLabel') : label;
+    const finalAttachmentLabel = attachmentLabel === "Attachments" ? t('components.markdownEditor.attachmentsLabel') : attachmentLabel;
+    const finalAttachmentDescription = attachmentDescription === "You can attach images (JPEG, JPG, PNG) to support your content."
+        ? t('components.markdownEditor.attachmentDescription')
+        : attachmentDescription;
+    const finalSubmitButtonText = submitButtonText === "Submit" ? t('components.markdownEditor.submit') : submitButtonText;
+
     // Ref to the hidden file input for triggering file selection
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -116,7 +127,7 @@ const CustomMarkdownEditor: React.FC<MarkdownEditorProps> = ({
             <div>
                 {/* Label for the editor */}
                 <label className="block text-color-primary font-bold mb-2">
-                    {label}
+                    {finalLabel}
                 </label>
                 {/* Container for the markdown editor with light color mode */}
                 <div data-color-mode="light">
@@ -165,7 +176,7 @@ const CustomMarkdownEditor: React.FC<MarkdownEditorProps> = ({
             {showAttachments && (
                 <div>
                     {/* Label for attachments */}
-                    <label className="block text-color-primary font-bold mb-2">{attachmentLabel}</label>
+                    <label className="block text-color-primary font-bold mb-2">{finalAttachmentLabel}</label>
                     {/* Hidden file input for selecting files */}
                     <input
                         type="file"
@@ -186,16 +197,16 @@ const CustomMarkdownEditor: React.FC<MarkdownEditorProps> = ({
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
                             />
                         </svg>
-                        Add Attachments
+                        {t('components.markdownEditor.addAttachments')}
                     </button>
                     {/* Description for attachments */}
                     <p className="text-sm mt-1">
-                        {attachmentDescription}
+                        {finalAttachmentDescription}
                     </p>
                     {/* List of attached files - only show if files exist */}
                     {files.length > 0 && (
                         <div className="mt-4">
-                            <h4 className="text-color-primary font-semibold mb-2">Attached Files:</h4>
+                            <h4 className="text-color-primary font-semibold mb-2">{t('components.markdownEditor.attachedFiles')}</h4>
                             <div className="space-y-2">
                                 {/* Map over files to display each */}
                                 {files.map((file: File, index: number) => (
@@ -212,7 +223,7 @@ const CustomMarkdownEditor: React.FC<MarkdownEditorProps> = ({
                                             type="button"
                                             onClick={() => handleFileRemove(index)} // Remove file
                                             className="text-red-500 hover:text-red-700 p-1 cursor-pointer"
-                                            title="Remove file"
+                                            title={t('components.markdownEditor.removeFile')}
                                         >
                                             {/* Trash icon */}
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -238,7 +249,7 @@ const CustomMarkdownEditor: React.FC<MarkdownEditorProps> = ({
                             disabled={isSubmitting} // Disable while submitting
                             className="bg-indigo-600 text-white hover:bg-indigo-700 px-6 py-2 rounded-md font-bold disabled:bg-gray-400 cursor-pointer"
                         >
-                            {isSubmitting ? 'Submitting...' : submitButtonText} {/* Dynamic text based on state */}
+                            {isSubmitting ? t('components.markdownEditor.submitting') : finalSubmitButtonText} {/* Dynamic text based on state */}
                         </button>
                     </div>
                 </div>

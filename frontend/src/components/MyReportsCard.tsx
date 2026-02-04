@@ -1,5 +1,6 @@
 // frontend/src/components/MyReportsCard.tsx
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ReportMyReportsSummary } from '../types/reportTypes';
 import { getSeverityInfo } from '../utils/severityHelper';
 import { getStatusInfo } from '../utils/statusHelper';
@@ -15,18 +16,18 @@ const MyReportsCard: React.FC<MyReportsCardProps> = ({
     isSelected,
     onClick
 }) => {
+    const { t } = useTranslation();
     const severityInfo = getSeverityInfo(report.severity);
     const statusInfo = getStatusInfo(report.status);
 
     return (
         <li
-            className={`p-3 rounded cursor-pointer transition-colors border border-gray-200 ${
-                isSelected ? 'bg-gray-100' : 'hover:bg-gray-100'
-            }`}
+            className={`p-3 rounded cursor-pointer transition-colors border border-gray-200 ${isSelected ? 'bg-gray-100' : 'hover:bg-gray-100'
+                }`}
             onClick={() => onClick(report)}
         >
             <div className="font-medium mb-1">{report.title}</div>
-            <div className="text-sm mb-1"><strong>{report.program_name}</strong> by <em>{report.organization_name}</em></div>
+            <div className="text-sm mb-1"><strong>{report.program_name}</strong> {t('components.myReportsCard.by')} <em>{report.organization_name}</em></div>
             <div className="flex items-center justify-between">
                 <div className="text-xs text-color-secondary">
                     {new Date(report.created_at).toLocaleDateString()}

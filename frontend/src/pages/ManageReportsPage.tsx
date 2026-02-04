@@ -1,5 +1,6 @@
 // src/pages/ManageReportsPage.tsx
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
@@ -20,6 +21,7 @@ const ManageReportsPage: React.FC = () => {
     }>();
 
     // --- Component State ---
+    const { t } = useTranslation();
     const [currentPage, setCurrentPage] = useState(1);
     const { accessToken, setAccessToken } = useAuth();
     const LIMIT = 10; // Number of reports to fetch per page.
@@ -28,18 +30,18 @@ const ManageReportsPage: React.FC = () => {
     // 1. Fetch Logic for PROGRAM DETAILS (Metadata)
     // -------------------------------------------------------------------------
 
-    const { 
+    const {
         data: program,
         isLoading: loadingProgram,
         error: errorProgram
     } = useQuery({
         queryKey: ['program', orgSlug, progSlug, accessToken],
         queryFn: () => {
-            if (!orgSlug || !progSlug) throw new Error("Invalid parameters");
+            if (!orgSlug || !progSlug) throw new Error(t('manageReports.invalidParameters'));
             return programService.getProgramBySlug(
-                accessToken, 
-                orgSlug, 
-                progSlug, 
+                accessToken,
+                orgSlug,
+                progSlug,
                 setAccessToken
             );
         },
@@ -50,14 +52,14 @@ const ManageReportsPage: React.FC = () => {
     // 2. Fetch Logic for REPORTS (Paginated)
     // -------------------------------------------------------------------------
 
-    const { 
+    const {
         data: reportsData,
         isLoading: loadingReports,
         error: errorReports
     } = useQuery({
         queryKey: ['reports', orgSlug, progSlug, currentPage, accessToken],
         queryFn: () => {
-            if (!orgSlug || !progSlug) throw new Error("Invalid parameters");
+            if (!orgSlug || !progSlug) throw new Error(t('manageReports.invalidParameters'));
             return reportService.getReportsByProgram(
                 accessToken,
                 orgSlug,
@@ -69,7 +71,7 @@ const ManageReportsPage: React.FC = () => {
         },
         enabled: !!orgSlug && !!progSlug,
         // This keeps the previous page data visible while fetching the next page
-        placeholderData: keepPreviousData, 
+        placeholderData: keepPreviousData,
     });
 
     // -------------------------------------------------------------------------
@@ -104,7 +106,7 @@ const ManageReportsPage: React.FC = () => {
         <div className="h-auto bg-gray-50 py-8">
             <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h1 className="text-3xl font-bold mb-6">
-                    Reports for {program ? program.name : (progSlug || 'Program')}
+                    {t('manageReports.title')} {program ? program.name : (progSlug || 'Program')}
                 </h1>
 
                 <AsyncContent
@@ -115,7 +117,7 @@ const ManageReportsPage: React.FC = () => {
                 >
                     {reports.length === 0 ? (
                         <div className="text-center py-10 px-6 bg-white shadow rounded-lg">
-                            <p>No reports have been submitted to this program yet.</p>
+                            <p>{t('manageReports.noReports')}</p>
                         </div>
                     ) : (
                         <div className="space-y-4">
@@ -136,7 +138,7 @@ const ManageReportsPage: React.FC = () => {
                                 {'<'}
                             </button>
                             <span>
-                                Page {currentPage} of {totalPages}
+                                {t('common.pagination.page')} {currentPage} {t('common.pagination.of')} {totalPages}
                             </span>
                             <button
                                 onClick={handleNextPage}

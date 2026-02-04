@@ -1,6 +1,7 @@
 // src/pages/ReportSubmitPage.tsx
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { useAuth } from '../hooks/useAuth';
@@ -18,12 +19,13 @@ import { replaceDataUrlsInMarkdown } from '../utils/markdownUtils';
  * Refactored to use TanStack Query and handle modal state based on mutation success.
  */
 const ReportSubmitPage: React.FC = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const { orgSlug, progSlug } = useParams<{ orgSlug: string; progSlug: string }>();
     const { accessToken, setAccessToken } = useAuth();
 
     const [showConfirm, setShowConfirm] = useState(false);
-    
+
     // State to hold form data temporarily before confirmation
     const [pendingFormData, setPendingFormData] = useState<{
         formData: FormData;
@@ -34,10 +36,10 @@ const ReportSubmitPage: React.FC = () => {
     // 1. Data Fetching (Get Program Details)
     // -------------------------------------------------------------------------
 
-    const { 
-        data: program, 
-        isLoading, 
-        error 
+    const {
+        data: program,
+        isLoading,
+        error
     } = useQuery({
         queryKey: ['program', orgSlug, progSlug, accessToken],
         queryFn: () => {
@@ -84,10 +86,10 @@ const ReportSubmitPage: React.FC = () => {
                     for (let i = 0; i < filenames.length && i < attachments.length; i++) {
                         const originalFilename = filenames[i];
                         const sanitizedFilename = originalFilename.replace(/ /g, '_');
-                        
+
                         // Construct the download URL
                         const attachmentUrl = `${import.meta.env.VITE_API_BASE_URL}/reports/${result.id}/attachments/${attachments[i].id}/download`;
-                        
+
                         urlMap[originalFilename] = attachmentUrl;
                         urlMap[sanitizedFilename] = attachmentUrl;
                     }
@@ -97,18 +99,18 @@ const ReportSubmitPage: React.FC = () => {
 
                     // Step 3: Update the report with the fixed Markdown (PATCH)
                     await apiPatch(
-                        `/reports/${result.id}`, 
-                        accessToken, 
-                        { description: updatedDescription }, 
+                        `/reports/${result.id}`,
+                        accessToken,
+                        { description: updatedDescription },
                         setAccessToken
                     );
-                    
+
                     // Return the result with updated description just in case needed
                     return { ...result, description: updatedDescription };
 
                 } catch (replaceError) {
                     console.error('Error replacing data URLs:', replaceError);
-                    
+
                     toast("Report submitted. However, image URL replacement failed.", {
                         icon: '⚠️',
                         duration: 5000,
@@ -121,13 +123,13 @@ const ReportSubmitPage: React.FC = () => {
             // ONLY close the modal and navigate on success
             setShowConfirm(false);
             setPendingFormData(null);
-            
-            toast.success('Report submitted successfully!');
+
+            toast.success(t('reportSubmit.success'));
             navigate(`/programs/${orgSlug}/${progSlug}`);
         },
         onError: (err: any) => {
             // Keep modal open so user can try again or see the error
-            const msg = err?.response?.data?.detail || err?.message || 'Failed to submit report.';
+            const msg = err?.response?.data?.detail || err?.message || t('reportSubmit.error');
             toast.error(msg);
         }
     });
@@ -145,7 +147,7 @@ const ReportSubmitPage: React.FC = () => {
         if (pendingFormData) {
             submitReport(pendingFormData);
         } else {
-            toast.error('Missing form data.');
+            toast.error(t('reportSubmit.missingData'));
         }
     };
 
@@ -161,7 +163,7 @@ const ReportSubmitPage: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50 py-8">
             <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-                
+
                 <AsyncContent
                     loading={isLoading}
                     error={error}
@@ -170,8 +172,8 @@ const ReportSubmitPage: React.FC = () => {
                 >
                     {program && (
                         <>
-                            <h1 className="text-3xl font-bold mb-6">Submit a New Report</h1>
-                            
+                            <h1 className="text-3xl font-bold mb-6">{t('reportSubmit.title')}</h1>
+
                             <ReportSubmitForm
                                 onSubmit={handleSubmitReport}
                                 isSubmitting={isSubmitting}
@@ -185,12 +187,12 @@ const ReportSubmitPage: React.FC = () => {
 
                 <ConfirmationModal
                     isOpen={showConfirm}
-                    title="Confirm Report Submission"
-                    message="Are you sure you want to submit this report? Once submitted, it cannot be edited."
+                    title={t('reportSubmit.modals.confirmTitle')}
+                    message={t('reportSubmit.modals.confirmMessage')}
                     onConfirm={confirmSubmit}
                     onCancel={cancelSubmit}
-                    confirmText="Submit Report"
-                    cancelText="Cancel"
+                    confirmText={t('reportSubmit.submitButton')}
+                    cancelText={t('common.actions.cancel')}
                     isLoading={isSubmitting}
                 />
             </div>

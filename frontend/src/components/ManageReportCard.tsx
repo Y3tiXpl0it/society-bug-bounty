@@ -1,5 +1,6 @@
 // frontend/src/components/ManageReportCard.tsx
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import type { ReportSummary } from '../types/reportTypes';
 import { getSeverityInfo } from '../utils/severityHelper';
@@ -14,6 +15,7 @@ interface ManageReportCardProps {
  * This is used on the organization's private "Manage Reports" page.
  */
 const ManageReportCard: React.FC<ManageReportCardProps> = ({ report }) => {
+    const { t } = useTranslation();
     const severityInfo = getSeverityInfo(report.severity!);
 
     return (
@@ -29,7 +31,7 @@ const ManageReportCard: React.FC<ManageReportCardProps> = ({ report }) => {
                             {severityInfo.category} ({report.severity!.toFixed(1)})
                         </span>
                         <span>
-                            Submitted by <strong>{report.hacker_name}</strong> on{' '}
+                            {t('components.manageReportCard.submittedBy')} <strong>{report.hacker_name}</strong> {t('components.manageReportCard.on')}{' '}
                             <strong>{new Date(report.created_at).toLocaleDateString()}</strong>
                         </span>
                     </div>
@@ -38,7 +40,7 @@ const ManageReportCard: React.FC<ManageReportCardProps> = ({ report }) => {
                     to={`/reports/${report.id}`}
                     className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-5 rounded-md transition duration-300 ml-4 inline-block h-10 flex items-center justify-center"
                 >
-                    View Details
+                    {t('components.manageReportCard.viewDetails')}
                 </Link>
             </div>
 

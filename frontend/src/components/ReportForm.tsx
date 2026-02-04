@@ -1,5 +1,6 @@
 // src/components/ReportSubmitForm.tsx
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import type { Asset } from '../types/programTypes';
 import MarkdownEditor from './MarkdownEditor';
@@ -38,6 +39,7 @@ const ReportSubmitForm: React.FC<ReportSubmitFormProps> = ({
     organizationName,
     assets,
 }) => {
+    const { t } = useTranslation();
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState(`# Description
 
@@ -104,17 +106,17 @@ const ReportSubmitForm: React.FC<ReportSubmitFormProps> = ({
         <form onSubmit={handleSubmit}>
             <div className="bg-white p-8 shadow rounded space-y-4">
                 <p className="text-lg text-color-secondary">
-                    You are submitting a report to <span className="font-bold text-color-primary">{programName}</span> by{' '}
+                    {t('components.reportForm.submittingTo')} <span className="font-bold text-color-primary">{programName}</span> {t('components.reportForm.by')}{' '}
                     <span className="font-semibold text-color-primary">{organizationName}</span>.
                 </p>
 
                 {/* --- AFFECTED ASSETS SECTION --- */}
                 <div className="border border-gray-300 rounded p-4 bg-white mb-6">
                     <label className="block text-color-primary font-bold mb-2">
-                        Affected Assets <span className="text-red-500">*</span>
+                        {t('components.reportForm.affectedAssets')} <span className="text-red-500">*</span>
                     </label>
                     <p className="text-sm mb-2">
-                        Select the assets that are affected by this vulnerability.
+                        {t('components.reportForm.affectedAssetsDesc')}
                     </p>
                     <ul className={`mt-4 space-y-3 ${assets.length > 10 ? 'max-h-40 overflow-y-auto' : ''}`}>
                         {assets.map((asset) => (
@@ -149,7 +151,7 @@ const ReportSubmitForm: React.FC<ReportSubmitFormProps> = ({
                 {/* --- SEVERITY SCORE SECTION --- */}
                 <div className="border border-gray-300 rounded p-4 bg-white mb-6">
                     <label htmlFor="severity" className="block text-color-primary font-bold mb-2">
-                        Severity Score <span className="text-red-500">*</span>
+                        {t('components.reportForm.severityScore')} <span className="text-red-500">*</span>
                     </label>
                     <input
                         type="number"
@@ -176,7 +178,7 @@ const ReportSubmitForm: React.FC<ReportSubmitFormProps> = ({
                         required
                     />
                     <p className="text-sm mt-1">
-                        Enter a severity score based on the CVSS v3.1 standard (0.0 to 10.0).
+                        {t('components.reportForm.severityDesc')}
                     </p>
                 </div>
 
@@ -185,7 +187,7 @@ const ReportSubmitForm: React.FC<ReportSubmitFormProps> = ({
                     <div className="space-y-4">
                         <div>
                             <label htmlFor="title" className="block text-color-primary font-bold mb-2">
-                                Vulnerability Title <span className="text-red-500">*</span>
+                                {t('components.reportForm.vulnerabilityTitle')} <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
@@ -226,7 +228,7 @@ const ReportSubmitForm: React.FC<ReportSubmitFormProps> = ({
                         disabled={isSubmitting}
                         className="bg-indigo-600 text-white hover:bg-indigo-700 px-6 py-2 rounded-md font-bold disabled:bg-gray-400 cursor-pointer"
                     >
-                        {isSubmitting ? 'Submitting...' : 'Submit Report'}
+                        {isSubmitting ? t('components.reportForm.submitting') : t('components.reportForm.submit')}
                     </button>
                 </div>
             </div>

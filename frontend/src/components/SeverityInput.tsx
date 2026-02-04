@@ -1,5 +1,6 @@
 // frontend/src/components/SeverityInput.tsx
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getSeverityInfo } from '../utils/severityHelper';
 
 interface SeverityInputProps {
@@ -19,6 +20,7 @@ const SeverityInput: React.FC<SeverityInputProps> = ({
     onToggle,
     onClose
 }) => {
+    const { t } = useTranslation();
     const [internalIsOpen, setInternalIsOpen] = useState(false);
     const [selectedSeverity, setSelectedSeverity] = useState<string>((currentSeverity || 0).toString());
 
@@ -63,7 +65,7 @@ const SeverityInput: React.FC<SeverityInputProps> = ({
                     <div className="py-0.5">
                         <div className="px-3 py-1">
                             <div className="flex items-center space-x-2">
-                                <label className="text-sm font-medium text-color-primary">Severity:</label>
+                                <label className="text-sm font-medium text-color-primary">{t('components.severityInput.label')}</label>
                                 <input
                                     type="number"
                                     value={selectedSeverity}
@@ -88,7 +90,7 @@ const SeverityInput: React.FC<SeverityInputProps> = ({
                                 />
                             </div>
                             <div className="text-xs text-gray-600 mt-2 mb-1">
-                                Selected: <span className={`px-2 py-1 rounded-full ${selectedSeverityInfo.color}`}>
+                                {t('components.severityInput.selected')} <span className={`px-2 py-1 rounded-full ${selectedSeverityInfo.color}`}>
                                     {selectedSeverityInfo.category} ({(parseFloat(selectedSeverity) || 0).toFixed(1)})
                                 </span>
                             </div>
@@ -101,7 +103,7 @@ const SeverityInput: React.FC<SeverityInputProps> = ({
                                 className="w-full px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50 cursor-pointer"
                                 disabled={isUpdating}
                             >
-                                {isUpdating ? 'Saving...' : 'Save Changes'}
+                                {isUpdating ? t('components.severityInput.saving') : t('components.severityInput.save')}
                             </button>
                         </div>
                     )}

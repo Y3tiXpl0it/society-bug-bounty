@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 
 // https://vite.dev/config/
 export default defineConfig({
+    envDir: '..',
     plugins: [tailwindcss(), react()],
     server: {
         // This setting tells Vite to allow requests from the 'dev.societybugbounty.com' host.

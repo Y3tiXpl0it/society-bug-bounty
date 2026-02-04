@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Attachment } from '../types/commonTypes';
 import attachmentService from '../services/attachmentService';
 
@@ -9,6 +10,7 @@ interface AttachmentListProps {
 }
 
 const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, contextUrl, accessToken }) => {
+    const { t } = useTranslation();
     if (!attachments || attachments.length === 0) return null;
 
     const handleDownload = async (e: React.MouseEvent<HTMLAnchorElement>, attachment: Attachment) => {
@@ -43,7 +45,7 @@ const AttachmentList: React.FC<AttachmentListProps> = ({ attachments, contextUrl
     return (
         <div className="mt-4 pt-3 border-t border-gray-100">
             <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">
-                Attachments
+                {t('components.attachmentList.title')}
             </p>
             <div className="flex flex-wrap gap-2">
                 {attachments.map((att) => (

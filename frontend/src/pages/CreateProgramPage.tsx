@@ -1,5 +1,6 @@
 // src/pages/CreateProgramPage.tsx
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -16,6 +17,7 @@ import type { ProgramCreateData, ProgramBulkUpdateData } from '../types/programT
  */
 const CreateProgramPage: React.FC = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const queryClient = useQueryClient();
     const [showConfirm, setShowConfirm] = useState(false);
     const [pendingFormData, setPendingFormData] = useState<ProgramCreateData | null>(null);
@@ -24,11 +26,11 @@ const CreateProgramPage: React.FC = () => {
     // -------------------------------------------------------------------------
     // 1. Data Fetching (Get Organizations/My Programs)
     // -------------------------------------------------------------------------
-    
-    const { 
-        data: organizations, 
-        isLoading: loadingOrgs, 
-        error: errorOrgs 
+
+    const {
+        data: organizations,
+        isLoading: loadingOrgs,
+        error: errorOrgs
     } = useQuery({
         // Cache key: depends on token. If token changes, it refetches.
         queryKey: ['myPrograms', accessToken],
@@ -40,22 +42,22 @@ const CreateProgramPage: React.FC = () => {
     // -------------------------------------------------------------------------
 
     const { mutate: createProgram, isPending: isSubmitting } = useMutation({
-        mutationFn: (newProgramData: ProgramCreateData) => 
+        mutationFn: (newProgramData: ProgramCreateData) =>
             programService.createProgram(accessToken, newProgramData, setAccessToken),
-        
+
         onSuccess: () => {
             setShowConfirm(false);
             setPendingFormData(null);
 
-            toast.success('Program created successfully!');
-            
+            toast.success(t('createProgram.success'));
+
             queryClient.invalidateQueries({ queryKey: ['programs'] });
             queryClient.invalidateQueries({ queryKey: ['myPrograms'] });
-            
+
             navigate('/programs');
         },
         onError: (error: any) => {
-            const msg = error?.response?.data?.message || 'Failed to create program';
+            const msg = error?.response?.data?.message || t('createProgram.error');
             toast.error(msg);
         }
     });
@@ -63,7 +65,7 @@ const CreateProgramPage: React.FC = () => {
     // -------------------------------------------------------------------------
     // 3. Handlers
     // -------------------------------------------------------------------------
-    
+
     const handleCreateProgram = async (formData: ProgramCreateData | ProgramBulkUpdateData) => {
         setPendingFormData(formData as ProgramCreateData);
         setShowConfirm(true);
@@ -83,11 +85,12 @@ const CreateProgramPage: React.FC = () => {
     // -------------------------------------------------------------------------
     // 4. Render
     // -------------------------------------------------------------------------
-    
+
     return (
         <div className="min-h-screen bg-gray-50 py-8">
             <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 className="text-3xl font-bold mb-6">Create a New Program</h1>
+                <h1 className="text-3xl font-bold mb-6">{t('createProgram.title')}</h1>
+
 
                 {/* AsyncContent handles loading/error for the initial data required to render the form */}
                 <AsyncContent
@@ -99,18 +102,19 @@ const CreateProgramPage: React.FC = () => {
                     <ProgramForm
                         onSubmit={handleCreateProgram}
                         isSubmitting={isSubmitting}
-                        submitButtonText="Create Program"
+                        submitButtonText={t('createProgram.submitButton')}
                     />
                 </AsyncContent>
 
                 <ConfirmationModal
                     isOpen={showConfirm}
-                    title="Confirm Program Creation"
-                    message="Are you sure you want to create this program?"
+
+                    title={t('createProgram.confirmTitle')}
+                    message={t('createProgram.confirmMessage')}
                     onConfirm={confirmSubmit}
                     onCancel={cancelSubmit}
-                    confirmText="Create Program"
-                    cancelText="Cancel"
+                    confirmText={t('createProgram.submitButton')}
+                    cancelText={t('common.actions.cancel')}
                     isLoading={isSubmitting}
                 />
             </div>

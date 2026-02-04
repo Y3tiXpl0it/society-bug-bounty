@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 // Imports the custom hook to access authentication state and actions.
 import { useAuth } from '../hooks/useAuth';
@@ -17,6 +18,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
  */
 const Navbar: React.FC = () => {
     // --- State and Context ---
+    const { t } = useTranslation();
     const [isProfileMenuOpen, setProfileMenuOpen] = useState(false);
     const profileMenuRef = useRef<HTMLDivElement>(null);
     const { isLoggedIn, isLoading, user, logout } = useAuth();
@@ -86,7 +88,7 @@ const Navbar: React.FC = () => {
                     {isProfileMenuOpen && (
                         <div className="origin-top-right absolute right-0 mt-2 w-48 rounded shadow-lg py-1 bg-white border border-gray-300">
                             <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                My Profile
+                                {t('components.navbar.myProfile')}
                             </Link>
                             {/* Conditionally render the "Manage Programs" link for organization members. */}
                             {isOrgMember && (
@@ -94,14 +96,14 @@ const Navbar: React.FC = () => {
                                     to="/manage-programs"
                                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                 >
-                                    Manage Programs
+                                    {t('components.navbar.managePrograms')}
                                 </Link>
                             )}
                             <button
                                 onClick={logout}
                                 className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
                             >
-                                Logout
+                                {t('components.navbar.logout')}
                             </button>
                         </div>
                     )}
@@ -114,7 +116,7 @@ const Navbar: React.FC = () => {
                     to="/login"
                     className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-md text-sm font-medium transition duration-300"
                 >
-                    Log in
+                    {t('components.navbar.login')}
                 </Link>
             );
         }
@@ -139,14 +141,14 @@ const Navbar: React.FC = () => {
                                 to="/programs"
                                 className="text-gray-600 hover:text-indigo-700 px-3 py-2 rounded-md text-sm font-medium"
                             >
-                                Programs
+                                {t('components.navbar.programs')}
                             </Link>
                             {isLoggedIn && (
                                 <Link
                                     to="/my-reports"
                                     className="text-gray-600 hover:text-indigo-700 px-3 py-2 rounded-md text-sm font-medium"
                                 >
-                                    My Reports
+                                    {t('components.navbar.myReports')}
                                 </Link>
                             )}
                         </div>

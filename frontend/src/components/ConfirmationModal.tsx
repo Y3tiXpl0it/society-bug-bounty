@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface ConfirmationModalProps {
     isOpen: boolean;
@@ -17,10 +18,14 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     message,
     onConfirm,
     onCancel,
-    confirmText = 'Confirm',
-    cancelText = 'Cancel',
+    confirmText,
+    cancelText,
     isLoading = false,
 }) => {
+    const { t } = useTranslation();
+    // Use props or fall back to translated defaults
+    const finalConfirmText = confirmText || t('components.confirmationModal.defaultConfirm');
+    const finalCancelText = cancelText || t('components.confirmationModal.defaultCancel');
     if (!isOpen) return null;
 
     return (
@@ -34,14 +39,14 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                         disabled={isLoading}
                         className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 disabled:bg-gray-400 cursor-pointer"
                     >
-                        {cancelText}
+                        {finalCancelText}
                     </button>
                     <button
                         onClick={onConfirm}
                         disabled={isLoading}
                         className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:bg-gray-400 cursor-pointer"
                     >
-                        {isLoading ? 'Processing...' : confirmText}
+                        {isLoading ? t('components.confirmationModal.processing') : finalConfirmText}
                     </button>
                 </div>
             </div>

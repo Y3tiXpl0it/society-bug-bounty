@@ -1,5 +1,6 @@
 // src/pages/LoginPage.tsx
 import React, { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -12,7 +13,8 @@ const LoginPage: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { login } = useAuth();
-    
+    const { t } = useTranslation();
+
     // Ref to prevent double execution in React 18 Strict Mode
     const effectRan = useRef(false);
 
@@ -23,35 +25,35 @@ const LoginPage: React.FC = () => {
     // 1. Mutation (Login Logic)
     // -------------------------------------------------------------------------
 
-    const { 
-        mutate: processLogin, 
-        isPending: isProcessing, 
-        error 
+    const {
+        mutate: processLogin,
+        isPending: isProcessing,
+        error
     } = useMutation({
         mutationFn: async (code: string) => {
             // 1. Exchange code for access token
             const { access_token } = await authService.exchangeOAuthCode(code);
-            
+
             // 2. Fetch full user profile using the new token
             // Note: We pass an empty callback () => {} because we handle state update in onSuccess
-            const fullUser = await userService.getUserProfile(access_token, () => {});
-            
+            const fullUser = await userService.getUserProfile(access_token, () => { });
+
             return { access_token, user: fullUser };
         },
         onSuccess: (data) => {
             // Update Auth Context
             login(data.access_token, data.user);
-            
+
             // Clean URL (remove ?code=...)
             window.history.replaceState({}, document.title, window.location.pathname);
-            
+
             // Navigate to dashboard
             navigate('/programs');
-            toast.success('Welcome back!');
+            toast.success(t('login.messages.success'));
         },
         onError: (err: any) => {
             console.error("Login failed", err);
-            const msg = err?.response?.data?.detail || "Failed to log in.";
+            const msg = err?.response?.data?.detail || t('login.messages.error');
             toast.error(msg);
         }
     });
@@ -77,7 +79,7 @@ const LoginPage: React.FC = () => {
             window.location.href = url;
         },
         onError: () => {
-            toast.error("Could not connect to Google Login.");
+            toast.error(t('login.messages.googleError'));
         }
     });
 
@@ -90,10 +92,10 @@ const LoginPage: React.FC = () => {
             <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg">
                 <div className="text-center">
                     <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-                        Welcome Back
+                        {t('login.welcomeBack')}
                     </h2>
                     <p className="mt-2 text-sm text-gray-600">
-                        Sign in to access the Bug Bounty Platform
+                        {t('login.subtitle')}
                     </p>
                 </div>
 
@@ -140,7 +142,7 @@ const LoginPage: React.FC = () => {
                                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.57 2.77c.84-2.54 3.28-4.46 6.25-4.46z"
                                 />
                             </svg>
-                            Sign in with Google
+                            {t('login.signInGoogle')}
                         </button>
                     </div>
                 </AsyncContent>

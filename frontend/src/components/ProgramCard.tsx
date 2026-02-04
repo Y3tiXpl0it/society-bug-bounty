@@ -1,5 +1,6 @@
 // src/components/ProgramCard.tsx
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import type { ProgramSummary } from '../types/programTypes';
 import { generateBackgroundColor } from '../utils/colorHelper';
@@ -16,6 +17,7 @@ interface ProgramCardProps {
  * This is used on the main program listing page.
  */
 const ProgramCard: React.FC<ProgramCardProps> = ({ program }) => {
+    const { t } = useTranslation();
     const programUrl = `/programs/${program.organization.slug}/${program.slug}`;
 
     return (
@@ -61,7 +63,7 @@ const ProgramCard: React.FC<ProgramCardProps> = ({ program }) => {
                             to={programUrl}
                             className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-5 rounded-md transition duration-300 h-10 flex items-center justify-center"
                         >
-                            View Program
+                            {t('components.programCard.viewProgram')}
                         </Link>
                     </div>
                 </div>

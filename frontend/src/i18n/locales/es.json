@@ -1,0 +1,317 @@
+{
+    "common": {
+        "pagination": {
+            "page": "Página",
+            "of": "de"
+        },
+        "actions": {
+            "cancel": "Cancelar",
+            "delete": "Eliminar",
+            "edit": "Editar",
+            "saveChanges": "Guardar Cambios"
+        },
+        "loading": "Cargando...",
+        "warning": "Advertencia"
+    },
+    "programs": {
+        "title": "Programas",
+        "noPrograms": "No se encontraron programas."
+    },
+    "home": {
+        "welcome": "¡Bienvenido!",
+        "subtitle": "Explora los programas de bug bounty disponibles."
+    },
+    "login": {
+        "welcomeBack": "Bienvenido de nuevo",
+        "subtitle": "Inicia sesión para acceder a la plataforma de Bug Bounty",
+        "signInGoogle": "Iniciar sesión con Google",
+        "messages": {
+            "success": "¡Bienvenido de nuevo!",
+            "error": "Error al iniciar sesión.",
+            "googleError": "No se pudo conectar con Google Login."
+        }
+    },
+    "createProgram": {
+        "title": "Crear un Nuevo Programa",
+        "submitButton": "Crear Programa",
+        "success": "¡Programa creado exitosamente!",
+        "error": "Error al crear el programa",
+        "confirmTitle": "Confirmar Creación de Programa",
+        "confirmMessage": "¿Estás seguro de que deseas crear este programa?"
+    },
+    "editProgram": {
+        "title": "Editar Programa:",
+        "submitButton": "Guardar Cambios",
+        "deleteButton": "Eliminar Programa",
+        "deleting": "Eliminando...",
+        "successUpdate": "¡Programa actualizado exitosamente!",
+        "errorUpdate": "Error al actualizar el programa.",
+        "successDelete": "Programa eliminado.",
+        "errorDelete": "Error al eliminar el programa.",
+        "confirmDeleteTitle": "Confirmar Eliminación de Programa",
+        "confirmDeleteMessage": "¿Estás seguro de que deseas eliminar permanentemente este programa? Esta acción no se puede deshacer."
+    },
+    "manageReports": {
+        "title": "Reportes para",
+        "noReports": "Aún no se han enviado reportes a este programa.",
+        "invalidParameters": "Parámetros inválidos"
+    },
+    "managePrograms": {
+        "title": "Gestionar Tus Programas",
+        "createButton": "Crear Nuevo Programa",
+        "noPrograms": "Aún no has creado ningún programa. ¡Comienza creando uno!",
+        "notOrgMember": "Debes ser miembro de una organización para gestionar programas."
+    },
+    "myReports": {
+        "sidebarTitle": "Tus Reportes",
+        "noReports": "No se encontraron reportes.",
+        "programDeletedWarning": "El programa asociado con este reporte ha sido eliminado.",
+        "selectPrompt": "Selecciona un reporte de la barra lateral para ver detalles.",
+        "labels": {
+            "organization": "Organización:",
+            "program": "Programa:",
+            "status": "Estado:",
+            "severity": "Puntaje de Severidad:",
+            "submitted": "Enviado:",
+            "lastUpdated": "Última Actualización:"
+        },
+        "noReportSelected": "Ningún reporte seleccionado"
+    },
+    "profile": {
+        "title": "Mi Perfil",
+        "editAvatar": "Editar",
+        "updateAvatar": "Actualizar Avatar",
+        "updateProfile": "Actualizar Perfil",
+        "editProfile": "Editar Perfil",
+        "labels": {
+            "email": "Correo",
+            "username": "Nombre de usuario",
+            "bio": "Biografía"
+        },
+        "placeholders": {
+            "bio": "Cuéntanos sobre ti...",
+            "noBio": "Sin biografía",
+            "notSet": "No establecido",
+            "noUsername": "Sin nombre de usuario"
+        },
+        "warnings": {
+            "usernameChange": "Advertencia: Cambiar tu nombre de usuario es permanente (no puedes volver al anterior). Además, solo puedes cambiarlo una vez cada 30 días."
+        },
+        "modals": {
+            "avatarTitle": "Confirmar Actualización de Avatar",
+            "avatarMessage": "¿Estás seguro de que deseas actualizar tu foto de perfil?",
+            "profileTitle": "Confirmar Actualización de Perfil",
+            "profileMessage": "¿Estás seguro de que deseas actualizar tu información de perfil?"
+        },
+        "messages": {
+            "avatarSuccess": "Foto de perfil actualizada exitosamente",
+            "avatarError": "Error al actualizar la foto de perfil",
+            "profileSuccess": "Perfil actualizado exitosamente",
+            "profileError": "Error al actualizar el perfil",
+            "imageTooLarge": "La imagen es demasiado grande. Máx 5MB.",
+            "invalidImage": "Por favor selecciona un archivo de imagen válido.",
+            "validation": {
+                "usernameMin": "El nombre de usuario debe tener al menos 3 caracteres.",
+                "usernameMax": "El nombre de usuario no puede tener más de 24 caracteres.",
+                "usernameRegex": "El nombre de usuario solo puede contener letras, números, guiones bajos, guiones y puntos.",
+                "usernameReserved": "Este nombre de usuario está reservado y no se puede utilizar.",
+                "profileInfoMax": "La información del perfil no puede tener más de 500 caracteres.",
+                "fixErrors": "Por favor corrige los errores en el formulario."
+            },
+            "missingFileOrToken": "Falta el archivo o el token.",
+            "missingToken": "Falta el token.",
+            "loadUserError": "No se pudo cargar la información del usuario."
+        }
+    },
+    "programDetail": {
+        "offeredBy": "Ofrecido por",
+        "details": "Detalles del Programa",
+        "assets": "Activos en el Alcance",
+        "rewards": "Recompensas",
+        "submitReport": "Enviar Reporte",
+        "programInactive": "Programa Inactivo",
+        "loginRequired": "Debes iniciar sesión o registrarte antes de continuar.",
+        "detailsUnavailable": "Detalles del programa no disponibles para enviar un reporte.",
+        "missingParameters": "Faltan parámetros de URL"
+    },
+    "reportDetail": {
+        "deletedProgram": "Programa Eliminado",
+        "programDeletedWarning": "El programa asociado con este reporte ha sido eliminado.",
+        "labels": {
+            "organization": "Organización:",
+            "program": "Programa:",
+            "status": "Estado:",
+            "severity": "Puntaje de Severidad:",
+            "submitted": "Enviado:",
+            "lastUpdated": "Última Actualización:"
+        }
+    },
+    "reportSubmit": {
+        "title": "Enviar un Nuevo Reporte",
+        "submitButton": "Enviar Reporte",
+        "success": "¡Reporte enviado exitosamente!",
+        "error": "Error al enviar el reporte.",
+        "missingData": "Faltan datos en el formulario.",
+        "modals": {
+            "confirmTitle": "Confirmar Envío de Reporte",
+            "confirmMessage": "¿Estás seguro de que deseas enviar este reporte? Una vez enviado, no se puede editar."
+        }
+    },
+    "components": {
+        "asyncContent": {
+            "unexpectedError": "Ocurrió un error inesperado.",
+            "noInternet": "Sin conexión a Internet",
+            "checkNetwork": "Por favor verifica tu conexión y vuelve a intentarlo.",
+            "reload": "Recargar página",
+            "loadingContent": "Cargando contenido...",
+            "somethingWrong": "Algo salió mal",
+            "tryAgain": "Intentar de nuevo"
+        },
+        "attachmentList": {
+            "title": "Adjuntos"
+        },
+        "confirmationModal": {
+            "processing": "Procesando...",
+            "defaultConfirm": "Confirmar",
+            "defaultCancel": "Cancelar"
+        },
+        "imageModal": {
+            "loading": "Cargando imagen...",
+            "ariaDownload": "Descargar imagen",
+            "ariaClose": "Cerrar modal",
+            "downloadError": "Error al descargar la imagen"
+        },
+        "manageReportCard": {
+            "submittedBy": "Enviado por",
+            "on": "el",
+            "viewDetails": "Ver Detalles"
+        },
+        "markdownEditor": {
+            "contentLabel": "Contenido",
+            "attachmentsLabel": "Adjuntos",
+            "attachmentDescription": "Puedes adjuntar imágenes (JPEG, JPG, PNG) para respaldar tu contenido.",
+            "addAttachments": "Agregar Adjuntos",
+            "attachedFiles": "Archivos Adjuntos:",
+            "submit": "Enviar",
+            "submitting": "Enviando...",
+            "removeFile": "Eliminar archivo"
+        },
+        "myReportsCard": {
+            "by": "por"
+        },
+        "navbar": {
+            "myProfile": "Mi Perfil",
+            "managePrograms": "Gestionar Programas",
+            "logout": "Cerrar Sesión",
+            "login": "Iniciar Sesión",
+            "programs": "Programas",
+            "myReports": "Mis Reportes"
+        },
+        "notificationDropdown": {
+            "title": "Notificaciones",
+            "loading": "Cargando...",
+            "noNotifications": "No hay notificaciones",
+            "loadingMore": "Cargando más...",
+            "loadMore": "Cargar más notificaciones",
+            "timeAgo": {
+                "justNow": "Justo ahora",
+                "ago": "atrás",
+                "minute_one": "minuto",
+                "minute_other": "minutos",
+                "hour_one": "hora",
+                "hour_other": "horas",
+                "day_one": "día",
+                "day_other": "días",
+                "month_one": "mes",
+                "month_other": "meses",
+                "year_one": "año",
+                "year_other": "años"
+            }
+        },
+        "manageProgramCard": {
+            "active": "Activo",
+            "inactive": "Inactivo",
+            "viewReports": "Ver Reportes",
+            "editProgram": "Editar Programa"
+        },
+        "programCard": {
+            "viewProgram": "Ver Programa"
+        },
+        "programForm": {
+            "createFor": "Crear programa para:",
+            "selectOrg": "Seleccionar una organización",
+            "programName": "Nombre del Programa",
+            "description": "Descripción",
+            "inScopeAssets": "Activos en el Alcance",
+            "noAssets": "Aún no hay activos agregados.",
+            "addNewAssetHeader": "Agregar nuevo activo",
+            "addAssetButton": "+ Agregar activo",
+            "identifierPlaceholder": "Identificador (ej. ejemplo.com)",
+            "descriptionPlaceholder": "Descripción (opcional)",
+            "rewardGrid": "Tabla de Recompensas",
+            "programStatus": "Estado del Programa:",
+            "active": "Activo",
+            "inactive": "Inactivo",
+            "saving": "Guardando..."
+        },
+        "reportForm": {
+            "submittingTo": "Estás enviando un reporte a",
+            "by": "de",
+            "affectedAssets": "Activos Afectados",
+            "affectedAssetsDesc": "Selecciona los activos afectados por esta vulnerabilidad.",
+            "severityScore": "Puntaje de Severidad",
+            "severityDesc": "Ingresa un puntaje basado en el estándar CVSS v3.1 (0.0 a 10.0).",
+            "vulnerabilityTitle": "Título de la Vulnerabilidad",
+            "submit": "Enviar Reporte",
+            "submitting": "Enviando..."
+        },
+        "reportHistory": {
+            "affectedAssets": "Activos Afectados",
+            "noHistory": "No hay historial disponible para este reporte."
+        },
+        "reportHistoryAndComments": {
+            "loading": "Cargando historial...",
+            "programArchivedTitle": "Programa Archivado",
+            "programArchivedMsg": "Este programa ha sido eliminado. No se pueden agregar nuevos comentarios.",
+            "addCommentLabel": "Agregar Comentario",
+            "addCommentButton": "Agregar Comentario",
+            "confirmTitle": "Confirmar Envío de Comentario",
+            "confirmMsg": "¿Estás seguro de que deseas enviar este comentario?",
+            "submitComment": "Enviar Comentario"
+        },
+        "reportHistoryItem": {
+            "created": "creó este reporte",
+            "statusChange": "cambió el estado de",
+            "to": "a",
+            "severityChange": "cambió la severidad de",
+            "addedComment": "agregó un comentario",
+            "defaultAction": "realizó una acción",
+            "unknownUser": "Usuario Desconocido"
+        },
+        "severityInput": {
+            "label": "Severidad:",
+            "selected": "Seleccionado:",
+            "save": "Guardar Cambios",
+            "saving": "Guardando..."
+        },
+        "statusSelector": {
+            "received": "Recibido",
+            "inReview": "En Revisión",
+            "accepted": "Aceptado",
+            "rejected": "Rechazado",
+            "duplicate": "Duplicado",
+            "outOfScope": "Fuera de Alcance",
+            "resolved": "Resuelto",
+            "save": "Guardar Cambios",
+            "saving": "Guardando..."
+        },
+        "severityBadge": {
+            "none": "Ninguna",
+            "low": "Baja",
+            "medium": "Media",
+            "high": "Alta",
+            "critical": "Crítica",
+            "unknown": "Desconocida"
+        }
+    }
+}

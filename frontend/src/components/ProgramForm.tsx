@@ -1,5 +1,6 @@
 // src/components/ProgramForm.tsx
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import MarkdownEditor from './MarkdownEditor';
 import { z } from 'zod';
 import AssetItem from './AssetItem';
@@ -57,6 +58,7 @@ const ProgramForm: React.FC<ProgramFormProps> = ({
     submitButtonText,
     renderExtraActions,
 }) => {
+    const { t } = useTranslation();
     const { user, accessToken, setAccessToken } = useAuth();
 
     // --- Form State ---
@@ -265,7 +267,7 @@ const ProgramForm: React.FC<ProgramFormProps> = ({
                         {!initialData && user?.organizations && user.organizations.length > 0 && (
                             <div>
                                 <label htmlFor="organization" className="block text-color-primary font-bold mb-2">
-                                    Create program for: <span className="text-red-500">*</span>
+                                    {t('components.programForm.createFor')} <span className="text-red-500">*</span>
                                 </label>
                                 <select
                                     id="organization"
@@ -276,7 +278,7 @@ const ProgramForm: React.FC<ProgramFormProps> = ({
                                     }}
                                     className="w-full px-3 py-2 border border-gray-300 rounded text-color-primary focus:outline-none focus:border-indigo-500 focus:ring-indigo-500 cursor-pointer"
                                 >
-                                    <option value="">Select an organization</option>
+                                    <option value="">{t('components.programForm.selectOrg')}</option>
                                     {user.organizations.map((org) => (
                                         <option key={org.id} value={org.id}>
                                             {org.name}
@@ -287,7 +289,7 @@ const ProgramForm: React.FC<ProgramFormProps> = ({
                         )}
                         <div>
                             <label htmlFor="name" className="block text-color-primary font-bold mb-2">
-                                Program Name <span className="text-red-500">*</span>
+                                {t('components.programForm.programName')} <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
@@ -300,14 +302,14 @@ const ProgramForm: React.FC<ProgramFormProps> = ({
                         </div>
                         <div>
                             <label htmlFor="description" className="block text-color-primary font-bold mb-2">
-                                Description <span className="text-red-500">*</span>
+                                {t('components.programForm.description')} <span className="text-red-500">*</span>
                             </label>
                             <MarkdownEditor
                                 value={description}
                                 onChange={setDescription}
                                 height={400}
                                 files={[]} // Empty array since programs don't need attachments for now
-                                onFilesChange={() => {}} // No-op since we don't handle attachments
+                                onFilesChange={() => { }} // No-op since we don't handle attachments
                                 imageMap={{}}
                                 label=""
                                 showAttachments={false} // Hide attachments for programs
@@ -320,7 +322,7 @@ const ProgramForm: React.FC<ProgramFormProps> = ({
                 {/* --- ASSETS SECTION --- */}
                 <div className="border border-gray-300 rounded p-4 bg-white mb-6">
                     <h2 className="font-bold text-color-primary mb-4">
-                        In-Scope Assets <span className="text-red-500">*</span>
+                        {t('components.programForm.inScopeAssets')} <span className="text-red-500">*</span>
                     </h2>
                     <div className="space-y-4">
                         <div className="space-y-2">
@@ -347,10 +349,10 @@ const ProgramForm: React.FC<ProgramFormProps> = ({
                                 />
                             ))}
                             {assets.length === 0 && newlyAddedAssets.length === 0 && (
-                                <p className="text-center py-4">No assets added yet.</p>
+                                <p className="text-center py-4">{t('components.programForm.noAssets')}</p>
                             )}
                         </div>
-                        <h3 className="font-semibold text-color-primary mb-2">Add new asset to In-Scope Assets</h3>
+                        <h3 className="font-semibold text-color-primary mb-2">{t('components.programForm.addNewAssetHeader')}</h3>
                         {/* Form to add a new asset */}
                         <div className="space-y-0 p-4 border border-gray-300 rounded bg-white">
                             <div className="flex space-x-2">
@@ -376,7 +378,7 @@ const ProgramForm: React.FC<ProgramFormProps> = ({
                                 <div className="flex-1">
                                     <input
                                         type="text"
-                                        placeholder="Identifier (e.g., example.com)"
+                                        placeholder={t('components.programForm.identifierPlaceholder')}
                                         value={newAssetForm.identifier}
                                         onChange={(e) =>
                                             setNewAssetForm({
@@ -390,7 +392,7 @@ const ProgramForm: React.FC<ProgramFormProps> = ({
                                 </div>
                             </div>
                             <textarea
-                                placeholder="Description (optional)"
+                                placeholder={t('components.programForm.descriptionPlaceholder')}
                                 value={newAssetForm.description}
                                 onChange={(e) =>
                                     setNewAssetForm({
@@ -408,7 +410,7 @@ const ProgramForm: React.FC<ProgramFormProps> = ({
                                 onClick={handleAddAsset}
                                 className="text-indigo-600 hover:text-indigo-800 font-semibold cursor-pointer"
                             >
-                                + Add asset
+                                {t('components.programForm.addAssetButton')}
                             </button>
                         </div>
                     </div>
@@ -416,7 +418,7 @@ const ProgramForm: React.FC<ProgramFormProps> = ({
 
                 {/* --- REWARDS SECTION --- */}
                 <div className="border border-gray-300 rounded p-4 bg-white">
-                    <h2 className="font-bold text-color-primary mb-4">Reward Grid</h2>
+                    <h2 className="font-bold text-color-primary mb-4">{t('components.programForm.rewardGrid')}</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         {rewards.map((reward) => (
                             <div key={reward.severity}>
@@ -457,20 +459,18 @@ const ProgramForm: React.FC<ProgramFormProps> = ({
                                 onChange={(e) => setIsActive(e.target.checked)}
                             />
                             <div
-                                className={`block w-14 h-8 rounded-full transition-colors ${
-                                    isActive ? 'bg-indigo-600' : 'bg-gray-200'
-                                }`}
+                                className={`block w-14 h-8 rounded-full transition-colors ${isActive ? 'bg-indigo-600' : 'bg-gray-200'
+                                    }`}
                             ></div>
                             <div
-                                className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${
-                                    isActive ? 'transform translate-x-6' : ''
-                                }`}
+                                className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${isActive ? 'transform translate-x-6' : ''
+                                    }`}
                             ></div>
                         </div>
                         <div className="ml-3 text-color-primary">
-                            <span className="font-bold">Program Status:</span>
+                            <span className="font-bold">{t('components.programForm.programStatus')}</span>
                             <span className={`ml-2 font-semibold ${isActive ? 'text-indigo-600' : 'text-gray-500'}`}>
-                                {isActive ? 'Active' : 'Inactive'}
+                                {isActive ? t('components.programForm.active') : t('components.programForm.inactive')}
                             </span>
                         </div>
                     </label>
@@ -482,7 +482,7 @@ const ProgramForm: React.FC<ProgramFormProps> = ({
                             disabled={isSubmitting}
                             className="bg-indigo-600 text-white hover:bg-indigo-700 px-6 py-2 rounded-md font-bold disabled:bg-gray-400 cursor-pointer"
                         >
-                            {isSubmitting ? 'Saving...' : submitButtonText}
+                            {isSubmitting ? t('components.programForm.saving') : submitButtonText}
                         </button>
                     </div>
                 </div>

@@ -1,5 +1,6 @@
 // src/pages/BugBountyList.tsx
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
 import ProgramCard from '../components/ProgramCard';
@@ -8,9 +9,9 @@ import programService from '../services/programService';
 import type { ProgramSummary } from '../types/programTypes';
 
 // Hoist static JSX to avoid re-creation on every render
-const NO_PROGRAMS_VIEW = (
+const NO_PROGRAMS_VIEW = (t: (key: string) => string) => (
     <div className="text-center py-10 px-6 bg-white shadow rounded-lg">
-        <p>No programs found.</p>
+        <p>{t('programs.noPrograms')}</p>
     </div>
 );
 
@@ -23,6 +24,7 @@ const BugBountyList: React.FC = () => {
     // Only UI state (current page) is needed locally; data state is managed by React Query.
     const [currentPage, setCurrentPage] = useState(1);
     const { accessToken, setAccessToken } = useAuth();
+    const { t } = useTranslation();
 
     const LIMIT = 10;
 
@@ -76,7 +78,7 @@ const BugBountyList: React.FC = () => {
     return (
         <div className="h-auto bg-gray-50 py-8">
             <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 className="text-3xl font-bold mb-6">Programs</h1>
+                <h1 className="text-3xl font-bold mb-6">{t('programs.title')}</h1>
 
                 <AsyncContent
                     loading={isLoading}
@@ -85,7 +87,7 @@ const BugBountyList: React.FC = () => {
                     minLoadingTime={300}
                 >
                     {programs.length === 0 ? (
-                        NO_PROGRAMS_VIEW
+                        NO_PROGRAMS_VIEW(t)
                     ) : (
                         // Apply opacity transition when background fetching occurs (isPlaceholderData is true)
                         <div className={`space-y-4 transition-opacity duration-200 ${isPlaceholderData ? 'opacity-50' : 'opacity-100'}`}>
@@ -106,7 +108,7 @@ const BugBountyList: React.FC = () => {
                                 {'<'}
                             </button>
                             <span>
-                                Page {currentPage} of {totalPages}
+                                {t('programs.pagination.page')} {currentPage} {t('programs.pagination.of')} {totalPages}
                             </span>
                             <button
                                 onClick={handleNextPage}

@@ -1,5 +1,6 @@
 // frontend/src/components/NotificationDropdown.tsx
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Notification } from '../types/notificationTypes';
 import { NotificationRole } from '../types/notificationTypes';
 import StatusBadge from './StatusBadge';
@@ -26,6 +27,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     onMarkAllAsRead,
     onLoadMore
 }) => {
+    const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -68,47 +70,47 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     const formatTimeAgo = (dateString: string) => {
         const now = new Date();
         const date = new Date(dateString);
-        
+
         // Calculate difference in milliseconds
         const diffInMs = now.getTime() - date.getTime();
-        
+
         // If difference is negative or invalid, show "Just now"
         if (diffInMs < 0 || isNaN(diffInMs)) {
-            return 'Just now';
+            return t('components.notificationDropdown.timeAgo.justNow');
         }
 
         const diffInSeconds = Math.floor(diffInMs / 1000);
 
         // Less than 1 minute
-        if (diffInSeconds < 60) return 'Just now';
-        
+        if (diffInSeconds < 60) return t('components.notificationDropdown.timeAgo.justNow');
+
         // Less than 1 hour (show minutes)
         const diffInMinutes = Math.floor(diffInSeconds / 60);
         if (diffInMinutes < 60) {
-            return `${diffInMinutes} ${diffInMinutes === 1 ? 'minute' : 'minutes'} ago`;
+            return `${diffInMinutes} ${diffInMinutes === 1 ? t('components.notificationDropdown.timeAgo.minute_one') : t('components.notificationDropdown.timeAgo.minute_other')} ${t('components.notificationDropdown.timeAgo.ago')}`;
         }
-        
+
         // Less than 24 hours (show hours)
         const diffInHours = Math.floor(diffInMinutes / 60);
         if (diffInHours < 24) {
-            return `${diffInHours} ${diffInHours === 1 ? 'hour' : 'hours'} ago`;
+            return `${diffInHours} ${diffInHours === 1 ? t('components.notificationDropdown.timeAgo.hour_one') : t('components.notificationDropdown.timeAgo.hour_other')} ${t('components.notificationDropdown.timeAgo.ago')}`;
         }
-        
+
         // Less than 30 days (show days)
         const diffInDays = Math.floor(diffInHours / 24);
         if (diffInDays < 30) {
-            return `${diffInDays} ${diffInDays === 1 ? 'day' : 'days'} ago`;
+            return `${diffInDays} ${diffInDays === 1 ? t('components.notificationDropdown.timeAgo.day_one') : t('components.notificationDropdown.timeAgo.day_other')} ${t('components.notificationDropdown.timeAgo.ago')}`;
         }
-        
+
         // Less than 12 months (show months)
         const diffInMonths = Math.floor(diffInDays / 30);
         if (diffInMonths < 12) {
-            return `${diffInMonths} ${diffInMonths === 1 ? 'month' : 'months'} ago`;
+            return `${diffInMonths} ${diffInMonths === 1 ? t('components.notificationDropdown.timeAgo.month_one') : t('components.notificationDropdown.timeAgo.month_other')} ${t('components.notificationDropdown.timeAgo.ago')}`;
         }
-        
+
         // 12 months or more (show years)
         const diffInYears = Math.floor(diffInMonths / 12);
-        return `${diffInYears} ${diffInYears === 1 ? 'year' : 'years'} ago`;
+        return `${diffInYears} ${diffInYears === 1 ? t('components.notificationDropdown.timeAgo.year_one') : t('components.notificationDropdown.timeAgo.year_other')} ${t('components.notificationDropdown.timeAgo.ago')}`;
     };
 
     const renderNotificationMessage = (notification: Notification) => {
@@ -123,7 +125,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                 </div>
             );
         }
-        
+
         // Parse severity change notifications (format: "old_severity|new_severity")
         if (notification.notification_type === 'severity_changed') {
             const [oldSeverity, newSeverity] = notification.message.split('|');
@@ -135,7 +137,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                 </div>
             );
         }
-        
+
         // For other notifications, display the message as text
         return (
             <p className="text-sm text-gray-600 mt-1">
@@ -169,17 +171,17 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                 <div className="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg border border-gray-200 z-50">
                     <div className="py-2">
                         <div className="px-4 py-2 border-b border-gray-200">
-                            <h3 className="text-sm font-medium text-gray-900">Notifications</h3>
+                            <h3 className="text-sm font-medium text-gray-900">{t('components.notificationDropdown.title')}</h3>
                         </div>
 
                         <div className="max-h-96 overflow-y-auto">
                             {loading ? (
                                 <div className="px-4 py-3 text-center text-gray-500">
-                                    Loading...
+                                    {t('components.notificationDropdown.loading')}
                                 </div>
                             ) : notifications.length === 0 ? (
                                 <div className="px-4 py-3 text-center text-gray-500">
-                                    No notifications
+                                    {t('components.notificationDropdown.noNotifications')}
                                 </div>
                             ) : (
                                 <>
@@ -204,7 +206,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                                     ))}
                                     {loadingMore && (
                                         <div className="px-4 py-3 text-center text-gray-500 text-sm">
-                                            Loading more...
+                                            {t('components.notificationDropdown.loadingMore')}
                                         </div>
                                     )}
                                 </>
@@ -217,7 +219,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                                     onClick={onLoadMore}
                                     className="w-full text-sm text-blue-600 hover:text-blue-800 font-medium"
                                 >
-                                    Load more notifications
+                                    {t('components.notificationDropdown.loadMore')}
                                 </button>
                             </div>
                         )}

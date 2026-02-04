@@ -1,6 +1,7 @@
 // src/pages/ProgramDetailPage.tsx
 import React, { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import toast from 'react-hot-toast';
 import { useQuery } from '@tanstack/react-query';
@@ -21,6 +22,7 @@ import { AsyncContent } from '../components/AsyncContent';
  * Refactored to use TanStack Query instead of useAsync.
  */
 const ProgramDetailPage: React.FC = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const { orgSlug, progSlug } = useParams<{
         orgSlug: string;
@@ -32,15 +34,15 @@ const ProgramDetailPage: React.FC = () => {
     // -------------------------------------------------------------------------
     // 1. Data Fetching (TanStack Query)
     // -------------------------------------------------------------------------
-    
-    const { 
-        data: program, 
-        isLoading, 
-        error 
+
+    const {
+        data: program,
+        isLoading,
+        error
     } = useQuery({
         queryKey: ['program', orgSlug, progSlug, accessToken],
         queryFn: () => {
-            if (!orgSlug || !progSlug) throw new Error("Missing parameters");
+            if (!orgSlug || !progSlug) throw new Error(t('programDetail.missingParameters'));
             return programService.getProgramBySlug(accessToken, orgSlug, progSlug, setAccessToken);
         },
         // Only run the query if we have the slugs
@@ -50,16 +52,16 @@ const ProgramDetailPage: React.FC = () => {
     // -------------------------------------------------------------------------
     // 2. Event Handlers
     // -------------------------------------------------------------------------
-    
+
     const handleSubmitReportClick = () => {
         if (!isLoggedIn) {
-            navigate('/login', { state: { message: 'You need to sign in or sign up before continuing.' } });
+            navigate('/login', { state: { message: t('programDetail.loginRequired') } });
             return;
         }
         if (program) {
             navigate(`/programs/${program.organization.slug}/${program.slug}/submit-report`);
         } else {
-            toast.error('Program details not available to submit a report.');
+            toast.error(t('programDetail.detailsUnavailable'));
         }
     };
 
@@ -79,9 +81,9 @@ const ProgramDetailPage: React.FC = () => {
     }, [program]);
 
     return (
-        <AsyncContent 
-            loading={isLoading} 
-            error={error} 
+        <AsyncContent
+            loading={isLoading}
+            error={error}
             data={program}
             minLoadingTime={300}
         >
@@ -110,7 +112,7 @@ const ProgramDetailPage: React.FC = () => {
                             <div>
                                 <h1 className="text-3xl font-bold">{program.name}</h1>
                                 <p className="text-lg text-gray-500 mt-1">
-                                    Offered by <span className="font-semibold">{program.organization.name}</span>
+                                    {t('programDetail.offeredBy')} <span className="font-semibold">{program.organization.name}</span>
                                 </p>
                             </div>
                         </header>
@@ -120,20 +122,20 @@ const ProgramDetailPage: React.FC = () => {
                             {/* Left Column: Details & Assets */}
                             <div className="col-span-1 lg:col-span-3 bg-white shadow-lg rounded p-8">
                                 <h2 className="text-xl font-bold border-b border-gray-300 pb-4">
-                                    Program Details
+                                    {t('programDetail.details')}
                                 </h2>
                                 <div className="mt-6 break-words markdown-content">
-                                    <ReactMarkdown 
-                                        skipHtml={true} 
+                                    <ReactMarkdown
+                                        skipHtml={true}
                                         components={getProgramMarkdownComponents()}
                                         remarkPlugins={[remarkGfm]}
-                                        rehypePlugins={rehypePlugins} 
+                                        rehypePlugins={rehypePlugins}
                                     >
                                         {program.description}
                                     </ReactMarkdown>
                                 </div>
                                 <hr className="my-8 border-t border-gray-300" />
-                                <h2 className="text-xl font-bold">In-Scope Assets</h2>
+                                <h2 className="text-xl font-bold">{t('programDetail.assets')}</h2>
                                 <ul className="mt-4 space-y-3">
                                     {program.assets.map((asset) => (
                                         <li key={asset.id} className="p-2 rounded border border-gray-300">
@@ -165,19 +167,18 @@ const ProgramDetailPage: React.FC = () => {
                                     <button
                                         onClick={handleSubmitReportClick}
                                         disabled={!program.is_active}
-                                        className={`w-full text-white font-bold py-3 px-4 rounded-md text-base transition-colors ${
-                                            program.is_active
-                                                ? 'bg-indigo-600 hover:bg-indigo-700 cursor-pointer'
-                                                : 'bg-gray-400 cursor-not-allowed'
-                                        }`}
+                                        className={`w-full text-white font-bold py-3 px-4 rounded-md text-base transition-colors ${program.is_active
+                                            ? 'bg-indigo-600 hover:bg-indigo-700 cursor-pointer'
+                                            : 'bg-gray-400 cursor-not-allowed'
+                                            }`}
                                     >
-                                        {program.is_active ? 'Submit Report' : 'Program Inactive'}
+                                        {program.is_active ? t('programDetail.submitReport') : t('programDetail.programInactive')}
                                     </button>
                                 </div>
 
                                 {/* --- REWARDS SECTION --- */}
                                 <div className="bg-white shadow-lg rounded p-8">
-                                    <h2 className="text-xl font-bold text-center">Rewards</h2>
+                                    <h2 className="text-xl font-bold text-center">{t('programDetail.rewards')}</h2>
                                     <div className="mt-6 space-y-4">
                                         {sortedRewards.map((reward) => (
                                             <div

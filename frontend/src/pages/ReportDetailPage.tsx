@@ -1,6 +1,7 @@
 // src/pages/ReportDetailPage.tsx
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import reportService from '../services/reportService';
 import StatusSelector from '../components/StatusSelector';
@@ -16,6 +17,7 @@ import { AsyncContent } from '../components/AsyncContent';
  * Refactored to use TanStack Query instead of useAsync.
  */
 const ReportDetailPage: React.FC = () => {
+    const { t } = useTranslation();
     // --- URL Parameters ---
     const { reportId } = useParams<{ reportId: string }>();
 
@@ -30,11 +32,11 @@ const ReportDetailPage: React.FC = () => {
     // -------------------------------------------------------------------------
     // 1. Data Fetching (Get Report Details)
     // -------------------------------------------------------------------------
-    
-    const { 
-        data: report, 
-        isLoading, 
-        error 
+
+    const {
+        data: report,
+        isLoading,
+        error
     } = useQuery({
         queryKey: ['report', reportId, accessToken],
         queryFn: () => {
@@ -87,10 +89,10 @@ const ReportDetailPage: React.FC = () => {
     };
 
     // --- Helper Logic ---
-    
+
     // Determines if the current user has administrative rights for the organization
     const isOrgAdmin = report && user?.organizations?.some(org => org.id === report.program.organization.id);
-    
+
     // Checks if the associated program has been soft-deleted (program is null/missing)
     const isProgramDeleted = report && !report.program;
 
@@ -99,7 +101,7 @@ const ReportDetailPage: React.FC = () => {
     return (
         <div className="h-full">
             <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 h-full py-8">
-                
+
                 <AsyncContent
                     loading={isLoading}
                     error={error}
@@ -120,7 +122,7 @@ const ReportDetailPage: React.FC = () => {
                                             </div>
                                             <div className="ml-3">
                                                 <p className="text-sm font-medium text-white">
-                                                    Warning: The program associated with this report has been deleted.
+                                                    {t('reportDetail.programDeletedWarning')}
                                                 </p>
                                             </div>
                                         </div>
@@ -129,29 +131,29 @@ const ReportDetailPage: React.FC = () => {
                             )}
 
                             <div className="bg-white shadow rounded overflow-hidden self-start flex flex-col">
-                                
+
                                 {/* Report Header Section */}
                                 <div className="p-6 border-b border-gray-200">
                                     <h1 className="text-xl font-bold mb-4">{report.title}</h1>
 
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        
+
                                         {/* Column 1: Organization & Program Info */}
                                         <div>
                                             <div className="flex items-center mb-2">
-                                                <p className="text-sm text-gray-500">Organization:</p>
+                                                <p className="text-sm text-gray-500">{t('reportDetail.labels.organization')}</p>
                                                 <p className="text-sm text-gray-900 ml-2">{report.program.organization.name}</p>
                                             </div>
                                             <div className="flex items-center">
-                                                <p className="text-sm text-gray-500">Program:</p>
-                                                <p className="text-sm text-gray-900 ml-2">{isProgramDeleted ? 'Deleted Program' : report.program.name}</p>
+                                                <p className="text-sm text-gray-500">{t('reportDetail.labels.program')}</p>
+                                                <p className="text-sm text-gray-900 ml-2">{isProgramDeleted ? t('reportDetail.deletedProgram') : report.program.name}</p>
                                             </div>
                                         </div>
 
                                         {/* Column 2: Status & Severity Controls */}
                                         <div>
                                             <div className="flex items-center mb-2">
-                                                <p className="text-sm text-gray-500">Status:</p>
+                                                <p className="text-sm text-gray-500">{t('reportDetail.labels.status')}</p>
                                                 {isOrgAdmin ? (
                                                     <div className="ml-2 relative">
                                                         <StatusSelector
@@ -168,7 +170,7 @@ const ReportDetailPage: React.FC = () => {
                                                 )}
                                             </div>
                                             <div className="flex items-center">
-                                                <p className="text-sm text-gray-500">Severity Score:</p>
+                                                <p className="text-sm text-gray-500">{t('reportDetail.labels.severity')}</p>
                                                 {isOrgAdmin ? (
                                                     <div className="ml-2 relative">
                                                         <SeverityInput
@@ -189,11 +191,11 @@ const ReportDetailPage: React.FC = () => {
                                         {/* Column 3: Timestamps */}
                                         <div>
                                             <div className="flex items-center mb-2">
-                                                <p className="text-sm text-gray-500">Submitted:</p>
+                                                <p className="text-sm text-gray-500">{t('reportDetail.labels.submitted')}</p>
                                                 <p className="text-sm text-gray-900 ml-2">{new Date(report.created_at).toLocaleString()}</p>
                                             </div>
                                             <div className="flex items-center">
-                                                <p className="text-sm text-gray-500">Last Updated:</p>
+                                                <p className="text-sm text-gray-500">{t('reportDetail.labels.lastUpdated')}</p>
                                                 <p className="text-sm text-gray-900 ml-2">{new Date(report.updated_at).toLocaleString()}</p>
                                             </div>
                                         </div>

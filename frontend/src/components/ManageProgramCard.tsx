@@ -1,5 +1,6 @@
 // src/components/ManageProgramCard.tsx
 import React from "react";
+import { useTranslation } from 'react-i18next';
 import type { ProgramSummary } from "../types/programTypes";
 import { generateBackgroundColor } from "../utils/colorHelper";
 import { getInitials, formatReward } from "../utils/programHelper"; // Import shared helpers
@@ -21,6 +22,7 @@ const ManageProgramCard: React.FC<ManageProgramCardProps> = ({
     onEdit,
     onViewReports,
 }) => {
+    const { t } = useTranslation();
     return (
         <div className="bg-white border border-gray-200 rounded p-4 transition-shadow hover:shadow-lg">
             {/* Main container using Flexbox for a two-column layout: [Logo | Content] */}
@@ -62,26 +64,25 @@ const ManageProgramCard: React.FC<ManageProgramCardProps> = ({
                     {/* Right side of the content column (Action Button & Status) */}
                     <div className="flex-shrink-0 flex flex-col items-end">
                         <span
-                            className={`mb-2 px-3 py-1 text-sm font-semibold rounded-full ${
-                                program.is_active
+                            className={`mb-2 px-3 py-1 text-sm font-semibold rounded-full ${program.is_active
                                     ? "bg-green-200 text-green-800"
                                     : "bg-red-200 text-red-800"
-                            }`}
+                                }`}
                         >
-                            {program.is_active ? "Active" : "Inactive"}
+                            {program.is_active ? t('components.manageProgramCard.active') : t('components.manageProgramCard.inactive')}
                         </span>
                         <div className="flex space-x-2">
                             <button
                                 onClick={() => onViewReports(program)}
                                 className="bg-indigo-200 hover:bg-indigo-300 text-indigo-700 font-bold py-1 px-3 rounded-md transition duration-300 text-sm cursor-pointer"
                             >
-                                View Reports
+                                {t('components.manageProgramCard.viewReports')}
                             </button>
                             <button
                                 onClick={() => onEdit(program)}
                                 className="bg-gray-200 hover:bg-gray-300 text-color-primary font-bold py-1 px-3 rounded-md transition duration-300 text-sm cursor-pointer"
                             >
-                                Edit Program
+                                {t('components.manageProgramCard.editProgram')}
                             </button>
                         </div>
                     </div>

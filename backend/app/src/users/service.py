@@ -129,7 +129,7 @@ class UserService:
         # 1. Get user with their details
         user = await self.get_user_by_id(user_id)
         if not user:
-             raise NotFoundException("User not found")
+            raise NotFoundException("User not found")
 
         # 2. Delete old avatar if it exists
         if user.details and user.details.avatar_url:

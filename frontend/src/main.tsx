@@ -8,6 +8,7 @@ import './index.css';
 import App from './App.tsx';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider } from './hooks/useAuth.tsx';
+import './i18n/config';
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -38,12 +39,12 @@ createRoot(document.getElementById('root')!).render(
                     </AuthProvider>
                 </BrowserRouter>
             </GoogleOAuthProvider>
-            
+
             {/* DevTools will only be included in the bundle when running in development mode.
                 Vite automatically strips this code out during 'pnpm build' (Production).
             */}
             {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
-            
+
         </QueryClientProvider>
     </StrictMode>,
 );

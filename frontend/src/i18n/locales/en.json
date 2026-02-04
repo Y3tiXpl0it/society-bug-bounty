@@ -1,0 +1,317 @@
+{
+    "common": {
+        "pagination": {
+            "page": "Page",
+            "of": "of"
+        },
+        "actions": {
+            "cancel": "Cancel",
+            "delete": "Delete",
+            "edit": "Edit",
+            "saveChanges": "Save Changes"
+        },
+        "loading": "Loading...",
+        "warning": "Warning"
+    },
+    "programs": {
+        "title": "Programs",
+        "noPrograms": "No programs found."
+    },
+    "home": {
+        "welcome": "Welcome!",
+        "subtitle": "Explore the available bug bounty programs."
+    },
+    "login": {
+        "welcomeBack": "Welcome Back",
+        "subtitle": "Sign in to access the Bug Bounty Platform",
+        "signInGoogle": "Sign in with Google",
+        "messages": {
+            "success": "Welcome back!",
+            "error": "Failed to log in.",
+            "googleError": "Could not connect to Google Login."
+        }
+    },
+    "createProgram": {
+        "title": "Create a New Program",
+        "submitButton": "Create Program",
+        "success": "Program created successfully!",
+        "error": "Failed to create program",
+        "confirmTitle": "Confirm Program Creation",
+        "confirmMessage": "Are you sure you want to create this program?"
+    },
+    "editProgram": {
+        "title": "Edit Program:",
+        "submitButton": "Save Changes",
+        "deleteButton": "Delete Program",
+        "deleting": "Deleting...",
+        "successUpdate": "Program updated successfully!",
+        "errorUpdate": "Failed to update program.",
+        "successDelete": "Program deleted.",
+        "errorDelete": "Failed to delete program.",
+        "confirmDeleteTitle": "Confirm Program Deletion",
+        "confirmDeleteMessage": "Are you sure you want to permanently delete this program? This action cannot be undone."
+    },
+    "manageReports": {
+        "title": "Reports for",
+        "noReports": "No reports have been submitted to this program yet.",
+        "invalidParameters": "Invalid parameters"
+    },
+    "managePrograms": {
+        "title": "Manage Your Programs",
+        "createButton": "Create New Program",
+        "noPrograms": "You haven't created any programs yet. Start by creating one!",
+        "notOrgMember": "You must be a member of an organization to manage programs."
+    },
+    "myReports": {
+        "sidebarTitle": "Your Reports",
+        "noReports": "No reports found.",
+        "programDeletedWarning": "The program associated with this report has been deleted.",
+        "selectPrompt": "Select a report from the left sidebar to view details.",
+        "labels": {
+            "organization": "Organization:",
+            "program": "Program:",
+            "status": "Status:",
+            "severity": "Severity Score:",
+            "submitted": "Submitted:",
+            "lastUpdated": "Last Updated:"
+        },
+        "noReportSelected": "No report selected"
+    },
+    "profile": {
+        "title": "My Profile",
+        "editAvatar": "Edit",
+        "updateAvatar": "Update Avatar",
+        "updateProfile": "Update Profile",
+        "editProfile": "Edit Profile",
+        "labels": {
+            "email": "Email",
+            "username": "Username",
+            "bio": "Bio"
+        },
+        "placeholders": {
+            "bio": "Tell us about yourself...",
+            "noBio": "No bio set",
+            "notSet": "Not set",
+            "noUsername": "No username"
+        },
+        "warnings": {
+            "usernameChange": "Warning: Changing your username is permanent (you cannot go back to the old one). Also, you can only change it once every 30 days."
+        },
+        "modals": {
+            "avatarTitle": "Confirm Avatar Update",
+            "avatarMessage": "Are you sure you want to update your profile picture?",
+            "profileTitle": "Confirm Profile Update",
+            "profileMessage": "Are you sure you want to update your profile information?"
+        },
+        "messages": {
+            "avatarSuccess": "Profile picture updated successfully",
+            "avatarError": "Error updating profile picture",
+            "profileSuccess": "Profile updated successfully",
+            "profileError": "Error updating profile",
+            "imageTooLarge": "Image is too large. Max 5MB.",
+            "invalidImage": "Please select a valid image file.",
+            "validation": {
+                "usernameMin": "Username must be at least 3 characters long.",
+                "usernameMax": "Username must be no more than 24 characters long.",
+                "usernameRegex": "Username can only contain letters, numbers, underscores, hyphens, and dots.",
+                "usernameReserved": "This username is reserved and cannot be used.",
+                "profileInfoMax": "Profile info must be at most 500 characters long.",
+                "fixErrors": "Please fix the errors in the form."
+            },
+            "missingFileOrToken": "Missing file or token.",
+            "missingToken": "Missing token.",
+            "loadUserError": "Could not load user information."
+        }
+    },
+    "programDetail": {
+        "offeredBy": "Offered by",
+        "details": "Program Details",
+        "assets": "In-Scope Assets",
+        "rewards": "Rewards",
+        "submitReport": "Submit Report",
+        "programInactive": "Program Inactive",
+        "loginRequired": "You need to sign in or sign up before continuing.",
+        "detailsUnavailable": "Program details not available to submit a report.",
+        "missingParameters": "Missing URL parameters"
+    },
+    "reportDetail": {
+        "deletedProgram": "Deleted Program",
+        "programDeletedWarning": "The program associated with this report has been deleted.",
+        "labels": {
+            "organization": "Organization:",
+            "program": "Program:",
+            "status": "Status:",
+            "severity": "Severity Score:",
+            "submitted": "Submitted:",
+            "lastUpdated": "Last Updated:"
+        }
+    },
+    "reportSubmit": {
+        "title": "Submit a New Report",
+        "submitButton": "Submit Report",
+        "success": "Report submitted successfully!",
+        "error": "Failed to submit report.",
+        "missingData": "Missing form data.",
+        "modals": {
+            "confirmTitle": "Confirm Report Submission",
+            "confirmMessage": "Are you sure you want to submit this report? Once submitted, it cannot be edited."
+        }
+    },
+    "components": {
+        "asyncContent": {
+            "unexpectedError": "An unexpected error occurred.",
+            "noInternet": "No Internet Connection",
+            "checkNetwork": "Please check your network settings and try again.",
+            "reload": "Reload page",
+            "loadingContent": "Loading content...",
+            "somethingWrong": "Something went wrong",
+            "tryAgain": "Try Again"
+        },
+        "attachmentList": {
+            "title": "Attachments"
+        },
+        "confirmationModal": {
+            "processing": "Processing...",
+            "defaultConfirm": "Confirm",
+            "defaultCancel": "Cancel"
+        },
+        "imageModal": {
+            "loading": "Loading image...",
+            "ariaDownload": "Download image",
+            "ariaClose": "Close modal",
+            "downloadError": "Failed to download image"
+        },
+        "manageReportCard": {
+            "submittedBy": "Submitted by",
+            "on": "on",
+            "viewDetails": "View Details"
+        },
+        "markdownEditor": {
+            "contentLabel": "Content",
+            "attachmentsLabel": "Attachments",
+            "attachmentDescription": "You can attach images (JPEG, JPG, PNG) to support your content.",
+            "addAttachments": "Add Attachments",
+            "attachedFiles": "Attached Files:",
+            "submit": "Submit",
+            "submitting": "Submitting...",
+            "removeFile": "Remove file"
+        },
+        "myReportsCard": {
+            "by": "by"
+        },
+        "navbar": {
+            "myProfile": "My Profile",
+            "managePrograms": "Manage Programs",
+            "logout": "Logout",
+            "login": "Log in",
+            "programs": "Programs",
+            "myReports": "My Reports"
+        },
+        "notificationDropdown": {
+            "title": "Notifications",
+            "loading": "Loading...",
+            "noNotifications": "No notifications",
+            "loadingMore": "Loading more...",
+            "loadMore": "Load more notifications",
+            "timeAgo": {
+                "justNow": "Just now",
+                "ago": "ago",
+                "minute_one": "minute",
+                "minute_other": "minutes",
+                "hour_one": "hour",
+                "hour_other": "hours",
+                "day_one": "day",
+                "day_other": "days",
+                "month_one": "month",
+                "month_other": "months",
+                "year_one": "year",
+                "year_other": "years"
+            }
+        },
+        "manageProgramCard": {
+            "active": "Active",
+            "inactive": "Inactive",
+            "viewReports": "View Reports",
+            "editProgram": "Edit Program"
+        },
+        "programCard": {
+            "viewProgram": "View Program"
+        },
+        "programForm": {
+            "createFor": "Create program for:",
+            "selectOrg": "Select an organization",
+            "programName": "Program Name",
+            "description": "Description",
+            "inScopeAssets": "In-Scope Assets",
+            "noAssets": "No assets added yet.",
+            "addNewAssetHeader": "Add new asset to In-Scope Assets",
+            "addAssetButton": "+ Add asset",
+            "identifierPlaceholder": "Identifier (e.g., example.com)",
+            "descriptionPlaceholder": "Description (optional)",
+            "rewardGrid": "Reward Grid",
+            "programStatus": "Program Status:",
+            "active": "Active",
+            "inactive": "Inactive",
+            "saving": "Saving..."
+        },
+        "reportForm": {
+            "submittingTo": "You are submitting a report to",
+            "by": "by",
+            "affectedAssets": "Affected Assets",
+            "affectedAssetsDesc": "Select the assets that are affected by this vulnerability.",
+            "severityScore": "Severity Score",
+            "severityDesc": "Enter a severity score based on the CVSS v3.1 standard (0.0 to 10.0).",
+            "vulnerabilityTitle": "Vulnerability Title",
+            "submit": "Submit Report",
+            "submitting": "Submitting..."
+        },
+        "reportHistory": {
+            "affectedAssets": "Affected Assets",
+            "noHistory": "No history available for this report."
+        },
+        "reportHistoryAndComments": {
+            "loading": "Loading report history...",
+            "programArchivedTitle": "Program Archived",
+            "programArchivedMsg": "This program has been deleted. New comments cannot be added.",
+            "addCommentLabel": "Add Comment",
+            "addCommentButton": "Add Comment",
+            "confirmTitle": "Confirm Comment Submission",
+            "confirmMsg": "Are you sure you want to submit this comment?",
+            "submitComment": "Submit Comment"
+        },
+        "reportHistoryItem": {
+            "created": "created this report",
+            "statusChange": "changed status from",
+            "to": "to",
+            "severityChange": "changed severity from",
+            "addedComment": "added a comment",
+            "defaultAction": "performed an action",
+            "unknownUser": "Unknown User"
+        },
+        "severityInput": {
+            "label": "Severity:",
+            "selected": "Selected:",
+            "save": "Save Changes",
+            "saving": "Saving..."
+        },
+        "statusSelector": {
+            "received": "Received",
+            "inReview": "In Review",
+            "accepted": "Accepted",
+            "rejected": "Rejected",
+            "duplicate": "Duplicate",
+            "outOfScope": "Out of Scope",
+            "resolved": "Resolved",
+            "save": "Save Changes",
+            "saving": "Saving..."
+        },
+        "severityBadge": {
+            "none": "None",
+            "low": "Low",
+            "medium": "Medium",
+            "high": "High",
+            "critical": "Critical",
+            "unknown": "Unknown"
+        }
+    }
+}

@@ -1,5 +1,6 @@
 // frontend/src/components/ImageModal.tsx
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { apiFetch } from '../utils/apiClient';
 import axios from 'axios';
 import type { Attachment } from '../types/commonTypes';
@@ -28,6 +29,7 @@ const ImageModal: React.FC<ImageModalProps> = ({
     downloadUrl,
     accessToken,
 }) => {
+    const { t } = useTranslation();
     const [isDownloading, setIsDownloading] = useState(false);
     const [modalImageSrc, setModalImageSrc] = useState<string>(imageSrc);
     const [isLoadingImage, setIsLoadingImage] = useState<boolean>(false);
@@ -167,7 +169,7 @@ const ImageModal: React.FC<ImageModalProps> = ({
             document.body.removeChild(a);
         } catch (error) {
             console.error('Download failed:', error);
-            alert('Failed to download image');
+            alert(t('components.imageModal.downloadError'));
         } finally {
             setIsDownloading(false);
         }
@@ -198,7 +200,7 @@ const ImageModal: React.FC<ImageModalProps> = ({
                     onClick={handleDownload}
                     disabled={isDownloading || !downloadUrl}
                     className="text-white hover:text-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                    aria-label="Download image"
+                    aria-label={t('components.imageModal.ariaDownload')}
                 >
                     {isDownloading ? (
                         <svg className="w-8 h-8 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -232,7 +234,7 @@ const ImageModal: React.FC<ImageModalProps> = ({
                 <button
                     onClick={onClose}
                     className="text-white hover:text-gray-300 transition-colors cursor-pointer"
-                    aria-label="Close modal"
+                    aria-label={t('components.imageModal.ariaClose')}
                 >
                     <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -241,7 +243,7 @@ const ImageModal: React.FC<ImageModalProps> = ({
             </div>
 
             {/* Image container */}
-            <div 
+            <div
                 className="relative flex items-center justify-center p-4"
                 style={{ width: '90vw', height: '90vh' }}
             >
@@ -250,7 +252,7 @@ const ImageModal: React.FC<ImageModalProps> = ({
                         className="flex items-center justify-center h-full w-full"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <span className="text-gray-500">Loading image...</span>
+                        <span className="text-gray-500">{t('components.imageModal.loading')}</span>
                     </div>
                 ) : (
                     <img

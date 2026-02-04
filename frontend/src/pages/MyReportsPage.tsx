@@ -1,6 +1,7 @@
 // src/pages/MyReportsPage.tsx
 import React, { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
 import reportService from '../services/reportService';
@@ -16,9 +17,10 @@ import { getStatusInfo } from '../utils/statusHelper';
  * Refactored to use TanStack Query while strictly preserving original component styles.
  */
 const MyReportsPage: React.FC = () => {
+    const { t } = useTranslation();
     const [searchParams] = useSearchParams();
     const { user, accessToken, setAccessToken, isLoading: isAuthLoading } = useAuth();
-    
+
     // --- State ---
     // We keep the summary selection state to highlight the sidebar card immediately
     const [selectedReportSummary, setSelectedReportSummary] = useState<ReportMyReportsSummary | null>(null);
@@ -27,10 +29,10 @@ const MyReportsPage: React.FC = () => {
     // 1. Fetch Logic: LIST of Reports (Sidebar)
     // -------------------------------------------------------------------------
 
-    const { 
-        data: reportsData, 
-        isLoading: isListLoading, 
-        error: listError 
+    const {
+        data: reportsData,
+        isLoading: isListLoading,
+        error: listError
     } = useQuery({
         queryKey: ['myReports', accessToken],
         queryFn: () => reportService.getMyReports(accessToken, setAccessToken),
@@ -45,14 +47,14 @@ const MyReportsPage: React.FC = () => {
 
     const selectedId = selectedReportSummary?.id;
 
-    const { 
-        data: selectedReport, 
-        isLoading: isDetailsLoading, 
-        error: detailsError 
+    const {
+        data: selectedReport,
+        isLoading: isDetailsLoading,
+        error: detailsError
     } = useQuery({
         queryKey: ['report', selectedId, accessToken],
         queryFn: () => {
-            if (!selectedId) throw new Error("No report selected");
+            if (!selectedId) throw new Error(t('myReports.noReportSelected'));
             return reportService.getReportById(accessToken, selectedId, setAccessToken);
         },
         // Only fetch details when an ID is actually selected
@@ -97,11 +99,11 @@ const MyReportsPage: React.FC = () => {
         <div className="h-full">
             <div className="w-full px-4 sm:px-6 lg:px-8 h-full py-8">
                 <div className="flex gap-6">
-                    
+
                     {/* Left Sidebar - Programs */}
                     {/* Kept exact original class 'h-195' */}
                     <div className="w-96 bg-white shadow rounded p-4 h-195 flex flex-col">
-                        <h2 className="text-xl font-semibold mb-4">Your Reports</h2>
+                        <h2 className="text-xl font-semibold mb-4">{t('myReports.sidebarTitle')}</h2>
                         <div className="flex-1 overflow-y-auto">
                             {/* AsyncContent handles list loading/error inside the sidebar */}
                             <AsyncContent
@@ -111,7 +113,7 @@ const MyReportsPage: React.FC = () => {
                                 minLoadingTime={300}
                             >
                                 {sortedReports.length === 0 ? (
-                                    <p>No reports found.</p>
+                                    <p>{t('myReports.noReports')}</p>
                                 ) : (
                                     <ul className="space-y-2">
                                         {sortedReports.map((report) => (
@@ -135,7 +137,7 @@ const MyReportsPage: React.FC = () => {
                             error={detailsError}
                             // Always render children if no error/loading (logical check is inside)
                             // Note: if nothing is selected, isLoading is false, so it renders children immediately
-                            data={true} 
+                            data={true}
                             minLoadingTime={300}
                         >
                             {selectedReportSummary ? (
@@ -151,7 +153,7 @@ const MyReportsPage: React.FC = () => {
                                                     </div>
                                                     <div className="ml-3">
                                                         <p className="text-sm font-medium text-white">
-                                                            Warning: The program associated with this report has been deleted.
+                                                            {t('myReports.programDeletedWarning')}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -164,24 +166,24 @@ const MyReportsPage: React.FC = () => {
                                         <div className="grid grid-cols-3 gap-6">
                                             <div>
                                                 <div className="flex items-center mb-2">
-                                                    <p className="text-sm text-gray-500">Organization:</p>
+                                                    <p className="text-sm text-gray-500">{t('myReports.labels.organization')}</p>
                                                     <p className="text-sm text-gray-900 ml-2">{selectedReportSummary.organization_name}</p>
                                                 </div>
                                                 <div className="flex items-center">
-                                                    <p className="text-sm text-gray-500">Program:</p>
+                                                    <p className="text-sm text-gray-500">{t('myReports.labels.program')}</p>
                                                     <p className="text-sm text-gray-900 ml-2">{selectedReportSummary.program_name}</p>
                                                 </div>
                                             </div>
 
                                             <div>
                                                 <div className="flex items-center mb-2">
-                                                    <p className="text-sm text-gray-500">Status:</p>
+                                                    <p className="text-sm text-gray-500">{t('myReports.labels.status')}</p>
                                                     <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ml-2 ${getStatusInfo(selectedReportSummary.status).color}`}>
                                                         {getStatusInfo(selectedReportSummary.status).label}
                                                     </span>
                                                 </div>
                                                 <div className="flex items-center">
-                                                    <p className="text-sm text-gray-500">Severity Score:</p>
+                                                    <p className="text-sm text-gray-500">{t('myReports.labels.severity')}</p>
                                                     {(() => {
                                                         const severityInfo = getSeverityInfo(selectedReportSummary.severity);
                                                         return (
@@ -195,11 +197,11 @@ const MyReportsPage: React.FC = () => {
 
                                             <div>
                                                 <div className="flex items-center mb-2">
-                                                    <p className="text-sm text-gray-500">Submitted:</p>
+                                                    <p className="text-sm text-gray-500">{t('myReports.labels.submitted')}</p>
                                                     <p className="text-sm text-gray-900 ml-2">{new Date(selectedReportSummary.created_at).toLocaleString()}</p>
                                                 </div>
                                                 <div className="flex items-center">
-                                                    <p className="text-sm text-gray-500">Last Updated:</p>
+                                                    <p className="text-sm text-gray-500">{t('myReports.labels.lastUpdated')}</p>
                                                     <p className="text-sm text-gray-900 ml-2">{new Date(selectedReportSummary.updated_at).toLocaleString()}</p>
                                                 </div>
                                             </div>
@@ -219,7 +221,7 @@ const MyReportsPage: React.FC = () => {
                             ) : (
                                 // RESTORED: Original simple empty state (no SVG, no Flex column centering)
                                 <div className="p-6 text-center text-gray-500">
-                                    <p>Select a report from the left sidebar to view details.</p>
+                                    <p>{t('myReports.selectPrompt')}</p>
                                 </div>
                             )}
                         </AsyncContent>

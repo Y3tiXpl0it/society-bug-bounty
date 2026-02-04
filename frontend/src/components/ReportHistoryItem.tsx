@@ -1,5 +1,6 @@
 // frontend/src/components/ReportHistoryItem.tsx
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import { decode } from 'html-entities';
 import type { ReportEvent } from '../types/reportTypes';
@@ -31,6 +32,7 @@ const ReportHistoryItem: React.FC<ReportHistoryItemProps> = ({
     reportId,
     accessToken
 }) => {
+    const { t } = useTranslation();
     // State for image modal
     const [imageModal, setImageModal] = useState<{
         isOpen: boolean;
@@ -81,15 +83,15 @@ const ReportHistoryItem: React.FC<ReportHistoryItemProps> = ({
     const getActionText = (event: ReportEvent) => {
         switch (event.event_type) {
             case 'report_created':
-                return 'created this report';
+                return t('components.reportHistoryItem.created');
             case 'status_change':
-                return 'changed status from';
+                return t('components.reportHistoryItem.statusChange');
             case 'severity_change':
-                return 'changed severity from';
+                return t('components.reportHistoryItem.severityChange');
             case 'comment':
-                return 'added a comment';
+                return t('components.reportHistoryItem.addedComment');
             default:
-                return 'performed an action';
+                return t('components.reportHistoryItem.defaultAction');
         }
     };
 
@@ -125,7 +127,7 @@ const ReportHistoryItem: React.FC<ReportHistoryItemProps> = ({
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <span className="font-medium text-indigo-600">
-                            {event.user_name || 'Unknown User'}
+                            {event.user_name || t('components.reportHistoryItem.unknownUser')}
                         </span>
                         <span className="text-color-secondary">
                             {getActionText(event)}
@@ -133,14 +135,14 @@ const ReportHistoryItem: React.FC<ReportHistoryItemProps> = ({
                         {event.event_type === 'status_change' && (
                             <>
                                 <StatusBadge status={event.old_value || ''} />
-                                <span className="text-color-secondary">to</span>
+                                <span className="text-color-secondary">{t('components.reportHistoryItem.to')}</span>
                                 <StatusBadge status={event.new_value || ''} />
                             </>
                         )}
                         {event.event_type === 'severity_change' && (
                             <>
                                 <SeverityBadge severity={parseFloat(event.old_value || '0')} />
-                                <span className="text-color-secondary">to</span>
+                                <span className="text-color-secondary">{t('components.reportHistoryItem.to')}</span>
                                 <SeverityBadge severity={parseFloat(event.new_value || '0')} />
                             </>
                         )}
