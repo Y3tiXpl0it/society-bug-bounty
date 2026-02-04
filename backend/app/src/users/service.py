@@ -1,6 +1,7 @@
 # backend/app/src/users/service.py
 
 import uuid
+import secrets
 from datetime import datetime, timezone
 from pathlib import Path
 from app.core.config import settings
@@ -11,7 +12,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.src.users.models import User
 from app.core.exceptions import BadRequestException, NotFoundException
+from app.core.exceptions import BadRequestException, NotFoundException
 from app.utils.image_upload_service import ImageUploadService
+from app.src.users.manager import UserManager
+from app.src.users.google_oauth_service import GoogleOAuthService
+from app.src.users.schemas import UserCreate
+from app.src.users.models import User, OAuthAccount
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 # Directory for storing uploaded avatar files
 AVATAR_DIR = Path("media/avatars")
@@ -49,7 +58,7 @@ class UserService:
         # Add .unique() here as well for consistency and to prevent potential issues.
         return result.unique().scalar_one_or_none()
 
-    async def update_user_details(self, user_id: uuid.UUID, details_update: dict) -> User | None:
+    async def update_user_details(self, user_id: uuid.UUID, details_update: dict) -> User:
         """Updates the user details for a given user ID."""
         from app.src.users.models import UserDetails, UsernameBlocklist
         from sqlalchemy import func
@@ -60,7 +69,7 @@ class UserService:
         )
         user = result.unique().scalar_one_or_none()
         if not user or not user.details:
-            return None
+            raise NotFoundException("User details not found")
 
         # Check for username uniqueness (case-insensitive)
         if 'username' in details_update and details_update['username']:
@@ -156,3 +165,73 @@ class UserService:
         await self.update_user_details(user.id, {"avatar_url": new_avatar_url})
 
         return new_avatar_url
+
+    async def process_google_callback(
+        self,
+        code: str,
+        pkce_verifier: str,
+        user_manager: UserManager
+    ) -> User:
+        """
+        Handles the Google OAuth callback logic: exchange code, get info, create/update user.
+        """
+        google_service = GoogleOAuthService()
+
+        # 1. Exchange authorization code for Google tokens
+        try:
+            token_data = await google_service.exchange_code_for_token(
+                code=code,
+                code_verifier=pkce_verifier
+            )
+        except Exception as e:
+            logger.error(f"Error exchanging token: {e}")
+            raise BadRequestException("Failed to exchange token with Google")
+
+        # 2. Retrieve User Info from Google
+        try:
+            google_sub, email = await google_service.get_user_info(token_data["access_token"])
+        except Exception as e:
+            logger.error(f"Error fetching user info: {e}")
+            raise BadRequestException("Failed to fetch user info from Google")
+
+        # 3. Find or Create User
+        user = await self.get_user_by_email(email)
+
+        if not user:
+            # --- REGISTER NEW USER ---
+            password = secrets.token_urlsafe(12)
+            try:
+                # Create base user
+                user_create = UserCreate(email=email, password=password, is_active=True)
+                user = await user_manager.create(user_create)
+
+                # Calculate expiry timestamp
+                expires_at = None
+                if token_data.get("expires_in"):
+                    # Cast to int to avoid TypeError between int and str
+                    expires_at = int(datetime.now().timestamp()) + int(token_data["expires_in"])
+
+                # Create OAuth Account Link
+                oauth_account_data = {
+                    "oauth_name": "google",
+                    "access_token": token_data["access_token"],
+                    "expires_at": expires_at,
+                    "refresh_token": token_data.get("refresh_token"),
+                    "account_id": google_sub,
+                    "account_email": email,
+                    "user_id": user.id
+                }
+                self.session.add(OAuthAccount(**oauth_account_data))
+
+                await self.session.commit()
+
+            except Exception as e:
+                logger.error(f"Error creating new user: {e}")
+                await self.session.rollback()
+                raise BadRequestException("Error creating user account")
+        else:
+            # --- EXISTING USER ---
+            # Logic to update existing user tokens could go here
+            pass
+
+        return user

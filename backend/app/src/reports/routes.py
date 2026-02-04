@@ -131,44 +131,19 @@ async def add_comment_to_report(
     report, current_user = report_user
     service = ReportService(session, connection_manager)
     
-    # Import attachment service locally to avoid circular imports
-    attachment_service = AttachmentService(session)
-
-    comment_data = ReportCommentCreate(content=content)
-
-    try:
-        # 1. Create the comment
-        comment = await service.add_comment_to_report(
-            report_id=report_id,
-            comment_data=comment_data,
-            author=current_user
-        )
-
-        # 2. Upload attachments
-        if files:
-            await attachment_service.upload_multiple_attachments(
-                entity_type=EntityType.REPORT_COMMENT,
-                entity_id=comment.id,
-                uploader=current_user,
-                files=files
-            )
-        
-        # 3. COMMIT CHANGES
-        # If we reach here, the image is valid. Persist everything permanently.
-        await session.commit()
-        
-        # 4. SEND NOTIFICATIONS
-        # Only notify NOW that we are certain everything is saved.
-        await service.send_comment_notifications(report_id, current_user)
-
-    except Exception as e:
-        # If something failed, the rollback already happened automatically in the 'async with' block.
-        # Re-raise the error so the frontend receives the 400 Bad Request.
-        raise e
+    # Delegate orchestration to service
+    comment = await service.create_comment_with_attachments(
+        report_id=report_id,
+        content=content,
+        files=files,
+        author=current_user
+    )
 
     # 5. PREPARE RESPONSE
-    # Refresh the comment and load attachments to return them to the frontend
-    await session.refresh(comment)
+    # Attachments are already handled by the service and linked in the DB.
+    # We load them for the response.
+    # Note: Using a fresh AttachmentService here is fine for reading.
+    attachment_service = AttachmentService(session)
     attachments = await attachment_service.get_attachments_by_entity(EntityType.REPORT_COMMENT, comment.id)
 
     return ReportCommentResponse(

@@ -2,8 +2,10 @@
 import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import UploadFile
 
 from app.core.exceptions import BadRequestException, NotFoundException, ForbiddenException
+from app.core.config import settings
 from app.src.reports.models import Report, ReportComment, ReportEvent, ReportEventType
 from app.src.reports.repository import ReportRepository
 from app.src.reports.schemas import ReportCreate, ReportCreateRequest, ReportCommentCreate
@@ -12,6 +14,8 @@ from app.src.users.models import User
 from typing import Optional
 from app.src.notifications.service import NotificationService
 from app.src.websockets.connection_manager import ConnectionManager
+from app.src.attachments.service import AttachmentService
+from app.src.attachments.models import EntityType
 
 class ReportService:
     def __init__(self, session: AsyncSession, connection_manager: Optional[ConnectionManager] = None):
@@ -55,6 +59,65 @@ class ReportService:
             event_type=ReportEventType.report_created,
             user_id=hacker.id
         )
+
+        return new_report
+    
+    async def submit_report_full_flow(
+        self,
+        report_data: ReportCreateRequest,
+        program_id: uuid.UUID,
+        hacker: User,
+        files: list[UploadFile] | None = None
+    ) -> Report:
+        """
+        Orchestrates the full flow of submitting a report:
+        1. Create report record
+        2. Upload and link attachments
+        3. Commit transaction
+        4. Send notifications
+        """
+        # Validate file count
+        if files and len(files) > settings.MAX_FILES_PER_UPLOAD:
+            raise BadRequestException(
+                f"A maximum of {settings.MAX_FILES_PER_UPLOAD} files can be uploaded per report."
+            )
+
+        # 1. Create the Report (flushed, not committed)
+        new_report = await self.create_report(
+            report_data=report_data,
+            program_id=program_id,
+            hacker=hacker
+        )
+
+        # 2. Upload and attach files (if any provided)
+        if files:
+            attachment_service = AttachmentService(self.repository.session)
+            await attachment_service.upload_multiple_attachments(
+                entity_type=EntityType.REPORT,
+                entity_id=new_report.id,
+                uploader=hacker,
+                files=files
+            )
+
+        # 3. Final Commit (only if everything succeeded)
+        await self.repository.session.commit()
+
+        # 4. Refresh to get full data (including generated IDs/timestamps)
+        # We need to re-fetch to ensure we have the fresh state for notifications/response
+        # Using repository.get_by_id which is cleaner than refresh() for complex relationships sometimes,
+        # but refresh() is also fine. Let's use get_by_id to match original route logic "new_report = await report_service.repository.get_by_id(new_report.id)"
+        # actually refresh(new_report) should work if the session is alive. 
+        # But let's stick to the robust pattern:
+        await self.repository.session.refresh(new_report)
+        
+        # 5. Send notifications (after commit)
+        try:
+            await self.send_report_creation_notifications(new_report, hacker)
+        except Exception as e:
+            # We log but don't fail the request since the report is already saved
+            from app.core.logging import get_logger
+            logger = get_logger(__name__)
+            logger.error(f"Report created but failed to send notification: {e}")
 
         return new_report
     
@@ -189,6 +252,52 @@ class ReportService:
         )
 
         return new_comment
+
+    async def create_comment_with_attachments(
+        self,
+        report_id: uuid.UUID,
+        content: str,
+        files: list[UploadFile],
+        author: User
+    ) -> ReportComment:
+        """
+        Orchestrates the creation of a comment, including file uploads and notifications.
+        Handles the transaction commit.
+        """
+        # Validate file count
+        if files and len(files) > settings.MAX_FILES_PER_UPLOAD:
+            raise BadRequestException(
+                f"A maximum of {settings.MAX_FILES_PER_UPLOAD} files can be uploaded per comment."
+            )
+
+        comment_data = ReportCommentCreate(content=content)
+
+        # 1. Create the comment
+        comment = await self.add_comment_to_report(
+            report_id=report_id,
+            comment_data=comment_data,
+            author=author
+        )
+
+        # 2. Upload attachments
+        if files:
+            attachment_service = AttachmentService(self.repository.session)
+            await attachment_service.upload_multiple_attachments(
+                entity_type=EntityType.REPORT_COMMENT,
+                entity_id=comment.id,
+                uploader=author,
+                files=files
+            )
+        
+        # 3. COMMIT CHANGES
+        await self.repository.session.commit()
+        
+        # 4. SEND NOTIFICATIONS
+        await self.send_comment_notifications(report_id, author)
+
+        # 5. Refresh and return
+        await self.repository.session.refresh(comment)
+        return comment
 
     async def send_comment_notifications(
         self,

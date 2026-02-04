@@ -27,8 +27,6 @@ from app.src.programs.schemas import (
     ProgramSummary,
 )
 from app.src.programs.service import ProgramService
-from app.src.organizations.repository import OrganizationRepository
-from app.src.programs.repository import ProgramRepository
 from app.src.reports.schemas import ReportCreateRequest, ReportResponse, ReportSummary, PaginatedReportSummaryResponse
 from app.src.reports.service import ReportService
 from app.src.attachments.service import AttachmentService
@@ -97,27 +95,9 @@ async def get_program_details(
     user: User | None = Depends(get_current_user_optional)
 ):
     """Gets the full details of a specific program."""
-    org_repo = OrganizationRepository(session)
-    organization = await org_repo.get_by_slug(organization_slug)
-    if not organization:
-        raise NotFoundException("Organization not found")
-
-    program_repo = ProgramRepository(session)
-    program = await program_repo.get_by_slug(program_slug, organization.id)
-    if not program:
-        raise NotFoundException("Program not found")
-
-    if program.is_active:
-        return program
-
-    if not user:
-        raise NotFoundException("Program not found")
-
-    user_org_ids = {org.id for org in user.organizations}
-    if organization.id not in user_org_ids:
-        raise NotFoundException("Program not found")
-
-    return program
+    """Gets the full details of a specific program."""
+    service = ProgramService(session)
+    return await service.get_program_with_access_check(organization_slug, program_slug, user)
 
 @router.patch("/{organization_slug}/{program_slug}", response_model=ProgramDetail)
 async def bulk_update_program(
@@ -185,63 +165,26 @@ async def submit_report_for_program(
     )
 
     # 2. Validate organization and program existence and permissions
-    # Retrieve the organization by its slug
-    org_repo = OrganizationRepository(session)
-    organization = await org_repo.get_by_slug(organization_slug)
-    if not organization:
-        raise NotFoundException("Organization not found")
-
-    # Retrieve the program by its slug within the organization
-    program_repo = ProgramRepository(session)
-    program = await program_repo.get_by_slug(program_slug, organization.id)
-    if not program:
-        raise NotFoundException("Program not found")
+    program_service = ProgramService(session)
+    program = await program_service.get_program_with_access_check(
+        organization_slug, 
+        program_slug, 
+        current_user
+    )
 
     # Ensure the program is active before allowing report submission
     if not program.is_active:
         raise ForbiddenException("Reports can only be submitted to active programs.")
 
-    # 3. Execute the report submission transaction
-    try:
-        # A. Create the Report
-        # Note: For rollback to work properly, create_report must NOT perform session.commit()
-        report_service = ReportService(session, connection_manager)
-        new_report = await report_service.create_report(
-            report_data=report_data,
-            program_id=program.id,
-            hacker=current_user
-        )
-
-        # B. Upload and attach files (if any provided)
-        if files:
-            attachment_service = AttachmentService(session)
-            await attachment_service.upload_multiple_attachments(
-                entity_type=EntityType.REPORT,
-                entity_id=new_report.id,
-                uploader=current_user,
-                files=files
-            )
-
-        # C. Final Commit (only if everything succeeded)
-        await session.commit()
-
-        new_report = await report_service.repository.get_by_id(new_report.id)
-
-        # D. Send notifications (after commit)
-        try:
-            await report_service.send_report_creation_notifications(new_report, current_user)
-        except Exception as e:
-            logger.error(f"Report created but failed to send notification: {e}")
-
-        return new_report
-
-    except Exception as e:
-        # If anything failed (file validation, DB error), rollback everything.
-        # This removes the report from DB memory before it becomes permanent.
-        await session.rollback()
-
-        logger.error(f"Error submitting report: {str(e)}")
-        raise e
+    # 3. Execute the report submission transaction via Service
+    report_service = ReportService(session, connection_manager)
+    
+    return await report_service.submit_report_full_flow(
+        report_data=report_data,
+        program_id=program.id,
+        hacker=current_user,
+        files=files
+    )
 
 
 @router.get(
@@ -276,15 +219,9 @@ async def get_program_attachments(
     Requires authentication.
     """
     # Get program
-    org_repo = OrganizationRepository(session)
-    organization = await org_repo.get_by_slug(organization_slug)
-    if not organization:
-        raise NotFoundException("Organization not found")
-
-    program_repo = ProgramRepository(session)
-    program = await program_repo.get_by_slug(program_slug, organization.id)
-    if not program:
-        raise NotFoundException("Program not found")
+    # Get program
+    service = ProgramService(session)
+    program = await service.get_program_with_access_check(organization_slug, program_slug, current_user)
 
     # Get attachments
     attachment_service = AttachmentService(session)
@@ -307,15 +244,8 @@ async def download_program_attachment(
     from fastapi.responses import FileResponse
 
     # Get program
-    org_repo = OrganizationRepository(session)
-    organization = await org_repo.get_by_slug(organization_slug)
-    if not organization:
-        raise NotFoundException("Organization not found")
-
-    program_repo = ProgramRepository(session)
-    program = await program_repo.get_by_slug(program_slug, organization.id)
-    if not program:
-        raise NotFoundException("Program not found")
+    service = ProgramService(session)
+    program = await service.get_program_with_access_check(organization_slug, program_slug, current_user)
 
     # Get and validate attachment
     attachment_service = AttachmentService(session)

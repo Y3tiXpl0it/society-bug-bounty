@@ -6,7 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.src.programs.models import Program
 from app.src.programs.repository import ProgramRepository
 from app.src.programs.schemas import ProgramBulkUpdate, ProgramCreate
-from app.core.exceptions import AlreadyExistsException, AlreadyExistsException
+from app.core.exceptions import AlreadyExistsException, NotFoundException
+from app.src.organizations.repository import OrganizationRepository
+from app.src.users.models import User
 
 class ProgramService:
     """
@@ -114,3 +116,39 @@ class ProgramService:
         # Note: Business logic for bulk updates (like checking for duplicate
         # assets) is handled within the repository for this specific endpoint.
         return await self.repository.bulk_update(program_id, update_data)
+    
+    async def get_program_with_access_check(
+        self,
+        organization_slug: str,
+        program_slug: str,
+        user: User | None = None
+    ) -> Program:
+        """
+        Retrieves a program by slug and organization slug, verifying existence and access permissions.
+        
+        Rules:
+        1. Org must exist.
+        2. Program must exist within Org.
+        3. If Program is inactive, User must be a member of the Org to view it.
+        """
+        org_repo = OrganizationRepository(self.repository.session)
+        organization = await org_repo.get_by_slug(organization_slug)
+        if not organization:
+            raise NotFoundException("Organization not found")
+
+        program = await self.repository.get_by_slug(program_slug, organization.id)
+        if not program:
+            raise NotFoundException("Program not found")
+
+        if program.is_active:
+            return program
+
+        # If program is not active, strict checks apply
+        if not user:
+            raise NotFoundException("Program not found")
+
+        user_org_ids = {org.id for org in user.organizations}
+        if organization.id not in user_org_ids:
+            raise NotFoundException("Program not found")
+
+        return program

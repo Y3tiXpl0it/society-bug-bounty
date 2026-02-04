@@ -11,6 +11,7 @@ from app.src.notifications.schemas import NotificationCreate
 from app.src.users.models import User
 from app.src.websockets.connection_manager import ConnectionManager
 from app.src.notifications.models import NotificationRoleEnum
+from app.core.exceptions import NotFoundException
 
 
 
@@ -90,8 +91,10 @@ class NotificationService:
         # Placeholder compatible with your previous code
         return await self.get_unread_count(user_id)
 
-    async def mark_notification_as_read(self, notification_id: uuid.UUID) -> bool:
-        return await self.notification_repo.mark_as_read(notification_id)
+    async def mark_notification_as_read(self, notification_id: uuid.UUID) -> None:
+        success = await self.notification_repo.mark_as_read(notification_id)
+        if not success:
+            raise NotFoundException("Notification not found")
 
     async def mark_all_as_read(self, user_id: uuid.UUID) -> int:
         return await self.notification_repo.mark_all_as_read(user_id)

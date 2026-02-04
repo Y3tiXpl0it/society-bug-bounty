@@ -26,8 +26,8 @@ from app.src.users.auth import (
 )
 from app.src.users.refresh_token_service import RefreshTokenService
 from app.src.users.service import UserService
-from app.src.users.schemas import UserDetailsReadSchema, UserDetailsUpdateSchema, UserCreate
-from app.src.users.models import User, OAuthAccount
+from app.src.users.schemas import UserDetailsReadSchema, UserDetailsUpdateSchema
+from app.src.users.models import User
 
 logger = get_logger(__name__)
 
@@ -117,63 +117,13 @@ async def handle_google_callback(
     if not oauth_state_cookie or not pkce_verifier_cookie:
         raise BadRequestException("Invalid or expired login session. Please try again.")
 
-    # 3. Exchange authorization code for Google tokens
-    try:
-        token_data = await google_service.exchange_code_for_token(
-            code=body.code,
-            code_verifier=pkce_verifier_cookie 
-        )
-    except Exception as e:
-        logger.error(f"Error exchanging token: {e}")
-        raise BadRequestException("Failed to exchange token with Google")
-
-    # 4. Retrieve User Info from Google
-    try:
-        google_sub, email = await google_service.get_user_info(token_data["access_token"])
-    except Exception as e:
-        logger.error(f"Error fetching user info: {e}")
-        raise BadRequestException("Failed to fetch user info from Google")
-
-    # 5. Find or Create User
-    user = await service.get_user_by_email(email)
-    
-    if not user:
-        # --- REGISTER NEW USER ---
-        password = secrets.token_urlsafe(12)
-        try:
-            # Create base user
-            user_create = UserCreate(email=email, password=password, is_active=True)
-            user = await user_manager.create(user_create)
-            
-            # Calculate expiry timestamp
-            expires_at = None
-            if token_data.get("expires_in"):
-                # Cast to int to avoid TypeError between int and str
-                expires_at = int(datetime.now().timestamp()) + int(token_data["expires_in"])
-
-            # Create OAuth Account Link
-            # We use dictionary unpacking (**kwargs) to avoid static linter errors
-            oauth_account_data = {
-                "oauth_name": "google",
-                "access_token": token_data["access_token"],
-                "expires_at": expires_at,
-                "refresh_token": token_data.get("refresh_token"),
-                "account_id": google_sub,
-                "account_email": email,
-                "user_id": user.id
-            }
-            session.add(OAuthAccount(**oauth_account_data))
-
-            await session.commit()
-            
-        except Exception as e:
-            logger.error(f"Error creating new user: {e}")
-            await session.rollback()
-            raise BadRequestException("Error creating user account")
-    else:
-        # --- EXISTING USER ---
-        # Logic to update existing user tokens could go here
-        pass
+    # 3. Process Code Exchange and User Creation/Retrieval via Service
+    # (Delegates complex logic to service layer)
+    user = await service.process_google_callback(
+        code=body.code,
+        pkce_verifier=pkce_verifier_cookie,
+        user_manager=user_manager
+    )
 
     # 6. Generate Session Tokens (App JWT)
     access_token = await get_jwt_strategy().write_token(user)
@@ -278,8 +228,6 @@ async def update_user_details(
     Update the current user's profile details.
     """
     updated_user = await service.update_user_details(user.id, details_update.model_dump(exclude_unset=True))
-    if not updated_user:
-        raise NotFoundException("User details not found")
     return updated_user.details
 
 @user_router.post("/me/avatar", tags=["users"])

@@ -58,10 +58,9 @@ async def mark_notification_as_read(
     """
     Mark a specific notification as read.
     """
+    """
     service = NotificationService(db)
-    success = await service.mark_notification_as_read(notification_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Notification not found")
+    await service.mark_notification_as_read(notification_id)
     return {"message": "Notification marked as read"}
 
 
