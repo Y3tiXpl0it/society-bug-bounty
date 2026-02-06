@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.core.database import get_session
 from app.core.logging import get_logger
 from app.core.exceptions import ForbiddenException, NotFoundException, BadRequestException 
+from app.core.error_codes import ErrorCode
 
 # --- Security & Business Logic Imports ---
 from app.core.dependencies import (
@@ -82,7 +83,10 @@ async def create_program(
     user_org_ids = {org.id for org in current_user.organizations}
 
     if program_data.organization_id not in user_org_ids:
-        raise ForbiddenException("You are not a member of the specified organization.")
+        raise ForbiddenException(detail={
+            "code": ErrorCode.NOT_ORG_MEMBER,
+            "message": "You are not a member of the specified organization."
+        })
 
     return await ProgramService(session).create_program(program_data)
 
@@ -145,9 +149,11 @@ async def submit_report_for_program(
     The operation is wrapped in a transaction to ensure data consistency.
     """
     if files and len(files) > settings.MAX_FILES_PER_UPLOAD:
-        raise BadRequestException(
-            f"A maximum of {settings.MAX_FILES_PER_UPLOAD} files can be uploaded per comment."
-        )
+        raise BadRequestException(detail={
+            "code": ErrorCode.MAX_FILES_EXCEEDED,
+            "message": f"A maximum of {settings.MAX_FILES_PER_UPLOAD} files can be uploaded per comment.",
+            "params": {"max": settings.MAX_FILES_PER_UPLOAD}
+        })
 
     # 1. Parse and validate input data
     # Parse the asset_ids JSON string into a list, defaulting to empty list if invalid
@@ -174,7 +180,10 @@ async def submit_report_for_program(
 
     # Ensure the program is active before allowing report submission
     if not program.is_active:
-        raise ForbiddenException("Reports can only be submitted to active programs.")
+        raise ForbiddenException(detail={
+            "code": ErrorCode.PROGRAM_INACTIVE,
+            "message": "Reports can only be submitted to active programs."
+        })
 
     # 3. Execute the report submission transaction via Service
     report_service = ReportService(session, connection_manager)
@@ -251,6 +260,9 @@ async def download_program_attachment(
     attachment_service = AttachmentService(session)
     attachment = await attachment_service.get_attachment_by_id(attachment_id)
     if not attachment or attachment.entity_type != EntityType.PROGRAM or attachment.entity_id != program.id:
-        raise NotFoundException("Attachment not found")
+        raise NotFoundException(detail={
+            "code": ErrorCode.ATTACHMENT_NOT_FOUND,
+            "message": "Attachment not found"
+        })
 
     return FileResponse(attachment.file_path, media_type=attachment.mime_type, filename=attachment.file_name)

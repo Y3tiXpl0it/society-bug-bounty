@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
 from app.core.exceptions import BadRequestException, UnauthorizedException, NotFoundException
+from app.core.error_codes import ErrorCode
 from app.core.logging import get_logger
 from app.core.config import settings
 
@@ -115,7 +116,10 @@ async def handle_google_callback(
     pkce_verifier_cookie = request.cookies.get("pkce_verifier")
 
     if not oauth_state_cookie or not pkce_verifier_cookie:
-        raise BadRequestException("Invalid or expired login session. Please try again.")
+        raise BadRequestException(detail={
+            "code": ErrorCode.INVALID_LOGIN_SESSION,
+            "message": "Invalid or expired login session. Please try again."
+        })
 
     # 3. Process Code Exchange and User Creation/Retrieval via Service
     # (Delegates complex logic to service layer)
@@ -196,17 +200,26 @@ async def refresh_access_token(
 
     if not refresh_token or not csrf_token:
         clear_auth_cookies(response)
-        raise BadRequestException("Refresh token missing")
+        raise BadRequestException(detail={
+            "code": ErrorCode.REFRESH_TOKEN_MISSING,
+            "message": "Refresh token missing"
+        })
 
     token_record = await refresh_service.validate_refresh_token(refresh_token, csrf_token)
     
     if not token_record:
         clear_auth_cookies(response)
-        raise UnauthorizedException("Invalid or expired token")
+        raise UnauthorizedException(detail={
+            "code": ErrorCode.INVALID_TOKEN,
+            "message": "Invalid or expired token"
+        })
 
     user = await user_manager.get(token_record.user_id)
     if not user or not user.is_active:
-        raise UnauthorizedException("User inactive or not found")
+        raise UnauthorizedException(detail={
+            "code": ErrorCode.USER_INACTIVE,
+            "message": "User inactive or not found"
+        })
 
     new_refresh, new_csrf, _ = await refresh_service.rotate_refresh_token(user, token_record, request)
     access_token = await get_jwt_strategy().write_token(user)

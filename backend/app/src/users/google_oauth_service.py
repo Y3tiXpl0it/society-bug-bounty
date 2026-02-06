@@ -16,6 +16,7 @@ from urllib.parse import urlencode
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.core.exceptions import BadRequestException
+from app.core.error_codes import ErrorCode
 
 logger = get_logger(__name__)
 
@@ -122,16 +123,22 @@ class GoogleOAuthService:
 
                 if response.status_code != 200:
                     error_detail = response.json() if response.text else "Unknown error"
-                    raise BadRequestException(
-                        f"Failed to exchange code for token: {error_detail}"
-                    )
+                    raise BadRequestException(detail={
+                        "code": ErrorCode.GOOGLE_LOGIN_FAILED,
+                        "message": f"Failed to exchange code for token: {error_detail}",
+                        "params": {"detail": str(error_detail)}
+                    })
 
                 token_data = response.json()
                 return token_data
                 
         except httpx.HTTPError as e:
             logger.error(f"HTTP error during token exchange: {e}")
-            raise BadRequestException(f"Token exchange failed: {str(e)}")
+            raise BadRequestException(detail={
+                 "code": ErrorCode.GOOGLE_LOGIN_FAILED,
+                 "message": f"Token exchange failed: {str(e)}",
+                 "params": {"error": str(e)}
+            })
     
     async def get_user_info(self, access_token: str) -> Tuple[str, str]:
         """
@@ -154,20 +161,30 @@ class GoogleOAuthService:
                 )
                 
                 if response.status_code != 200:
-                    raise BadRequestException("Failed to retrieve user information")
+                    raise BadRequestException(detail={
+                        "code": ErrorCode.GOOGLE_LOGIN_FAILED,
+                        "message": "Failed to retrieve user information"
+                    })
 
                 user_data = response.json()
                 user_id = user_data.get("id")
                 email = user_data.get("email")
 
                 if not user_id or not email:
-                    raise BadRequestException("User ID or email not provided by Google")
+                    raise BadRequestException(detail={
+                        "code": ErrorCode.GOOGLE_LOGIN_FAILED,
+                        "message": "User ID or email not provided by Google"
+                    })
 
                 return user_id, email
                 
         except httpx.HTTPError as e:
             logger.error(f"HTTP error during user info retrieval: {e}")
-            raise BadRequestException(f"Failed to get user info: {str(e)}")
+            raise BadRequestException(detail={
+                "code": ErrorCode.GOOGLE_LOGIN_FAILED,
+                "message": f"Failed to get user info: {str(e)}",
+                "params": {"error": str(e)}
+            })
     
     @staticmethod
     def validate_pkce(code_challenge: str, code_verifier: str) -> bool:

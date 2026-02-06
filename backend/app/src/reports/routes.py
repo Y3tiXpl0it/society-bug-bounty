@@ -7,6 +7,7 @@ from app.core.config import settings
 from app.core.database import get_session
 from app.core.dependencies import get_current_active_user, get_authorized_report, can_update_report_status, can_update_own_report_details, can_update_own_comment, get_connection_manager
 from app.core.exceptions import NotFoundException, BadRequestException
+from app.core.error_codes import ErrorCode
 from app.src.users.models import User
 from app.src.reports.service import ReportService
 from app.src.reports.schemas import ReportResponse, ReportCommentResponse, ReportCommentCreate, ReportStatusUpdate, ReportSeverityUpdate, ReportEventResponse
@@ -123,9 +124,11 @@ async def add_comment_to_report(
     connection_manager = Depends(get_connection_manager),
 ):
     if files and len(files) > settings.MAX_FILES_PER_UPLOAD:
-        raise BadRequestException(
-            f"A maximum of {settings.MAX_FILES_PER_UPLOAD} files can be uploaded per comment."
-        )
+        raise BadRequestException(detail={
+            "code": ErrorCode.MAX_FILES_EXCEEDED,
+            "message": f"A maximum of {settings.MAX_FILES_PER_UPLOAD} files can be uploaded per comment.",
+            "params": {"max": settings.MAX_FILES_PER_UPLOAD}
+        })
     
     """Adds a comment to a report's conversation."""
     report, current_user = report_user
@@ -255,7 +258,10 @@ async def download_report_attachment(
     service = AttachmentService(session)
     attachment = await service.get_attachment_by_id(attachment_id)
     if not attachment or attachment.entity_type != EntityType.REPORT or attachment.entity_id != report_id:
-        raise NotFoundException("Attachment not found")
+        raise NotFoundException(detail={
+            "code": ErrorCode.ATTACHMENT_NOT_FOUND,
+            "message": "Attachment not found"
+        })
 
     return FileResponse(
         attachment.file_path,
@@ -295,7 +301,10 @@ async def download_comment_attachment(
     service = AttachmentService(session)
     attachment = await service.get_attachment_by_id(attachment_id)
     if not attachment or attachment.entity_type != EntityType.REPORT_COMMENT or attachment.entity_id != comment_id:
-        raise NotFoundException("Attachment not found")
+        raise NotFoundException(detail={
+            "code": ErrorCode.ATTACHMENT_NOT_FOUND,
+            "message": "Attachment not found"
+        })
 
     return FileResponse(
         attachment.file_path,

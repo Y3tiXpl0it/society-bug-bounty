@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import UploadFile
 
 from app.core.exceptions import BadRequestException, NotFoundException, ForbiddenException
+from app.core.error_codes import ErrorCode
 from app.core.config import settings
 from app.src.reports.models import Report, ReportComment, ReportEvent, ReportEventType
 from app.src.reports.repository import ReportRepository
@@ -39,7 +40,11 @@ class ReportService:
             valid_asset_ids = {asset.id for asset in valid_assets}
             invalid_ids = set(report_data.asset_ids) - valid_asset_ids
             if invalid_ids:
-                raise NotFoundException(f"Invalid asset IDs: {list(invalid_ids)}")
+                raise NotFoundException(detail={
+                    "code": ErrorCode.INVALID_ASSET_IDS,
+                    "message": f"Invalid asset IDs: {list(invalid_ids)}",
+                    "params": {"invalid_ids": list(invalid_ids)}
+                })
 
         # Combine request data with required IDs (exclude asset_ids as it's handled separately)
         report_dict = report_data.model_dump()
@@ -78,9 +83,11 @@ class ReportService:
         """
         # Validate file count
         if files and len(files) > settings.MAX_FILES_PER_UPLOAD:
-            raise BadRequestException(
-                f"A maximum of {settings.MAX_FILES_PER_UPLOAD} files can be uploaded per report."
-            )
+            raise BadRequestException(detail={
+                "code": ErrorCode.MAX_FILES_EXCEEDED,
+                "message": f"A maximum of {settings.MAX_FILES_PER_UPLOAD} files can be uploaded per report.",
+                "params": {"max": settings.MAX_FILES_PER_UPLOAD}
+            })
 
         # 1. Create the Report (flushed, not committed)
         new_report = await self.create_report(
@@ -139,7 +146,10 @@ class ReportService:
         """Gets a report by its ID, raising an exception if not found."""
         report = await self.repository.get_by_id(report_id)
         if not report:
-            raise NotFoundException("Report not found")
+            raise NotFoundException(detail={
+                "code": ErrorCode.REPORT_NOT_FOUND,
+                "message": "Report not found"
+            })
         return report
 
     async def get_reports_by_program_paginated(self, program_id: uuid.UUID, skip: int, limit: int) -> tuple[list[Report], int]:
@@ -158,7 +168,10 @@ class ReportService:
 
         report = await self.repository.update(report_id, {"status": status})
         if not report:
-            raise NotFoundException("Report not found")
+            raise NotFoundException(detail={
+                "code": ErrorCode.REPORT_NOT_FOUND,
+                "message": "Report not found"
+            })
 
         # Create status change event
         await self.repository.create_event(
@@ -193,7 +206,10 @@ class ReportService:
 
         report = await self.repository.update(report_id, {"severity": severity})
         if not report:
-            raise NotFoundException("Report not found")
+            raise NotFoundException(detail={
+                "code": ErrorCode.REPORT_NOT_FOUND,
+                "message": "Report not found"
+            })
 
         # Create severity change event
         await self.repository.create_event(
@@ -234,7 +250,10 @@ class ReportService:
         report = await self.get_report_by_id(report_id)
 
         if report.program.deleted_at:
-            raise BadRequestException("Cannot add comments to a report belonging to a deleted program.")
+            raise BadRequestException(detail={
+                "code": ErrorCode.CANNOT_EDIT_DELETED_PROGRAM,
+                "message": "Cannot add comments to a report belonging to a deleted program."
+            })
 
         # Call repository to add the comment (Ahora el repo usa flush, no cierra la transacción)
         new_comment = await self.repository.add_comment(
@@ -266,9 +285,11 @@ class ReportService:
         """
         # Validate file count
         if files and len(files) > settings.MAX_FILES_PER_UPLOAD:
-            raise BadRequestException(
-                f"A maximum of {settings.MAX_FILES_PER_UPLOAD} files can be uploaded per comment."
-            )
+            raise BadRequestException(detail={
+                "code": ErrorCode.MAX_FILES_EXCEEDED,
+                "message": f"A maximum of {settings.MAX_FILES_PER_UPLOAD} files can be uploaded per comment.",
+                "params": {"max": settings.MAX_FILES_PER_UPLOAD}
+            })
 
         comment_data = ReportCommentCreate(content=content)
 
@@ -353,7 +374,10 @@ class ReportService:
         if program_org_id in user_org_ids:
             return
 
-        raise NotFoundException("You don't have permission to access comments on this report")
+        raise ForbiddenException(detail={
+            "code": ErrorCode.FORBIDDEN,
+            "message": "You don't have permission to access comments on this report"
+        })
 
     async def _notify_organization_members_on_comment(self, report: Report, commenter: User, use_celery: bool = True) -> None:
         """Notify organization members about a new comment on a report."""
@@ -458,19 +482,31 @@ class ReportService:
         # Get the comment to check permissions
         comment = await self.repository.get_comment_by_id(comment_id)
         if not comment:
-            raise NotFoundException("Comment not found")
+            raise NotFoundException(detail={
+                "code": ErrorCode.COMMENT_NOT_FOUND,
+                "message": "Comment not found"
+            })
         
         report = await self.get_report_by_id(comment.report_id)
         if report.program.deleted_at:
-             raise BadRequestException("Cannot edit comments on a report belonging to a deleted program.")
+             raise BadRequestException(detail={
+                 "code": ErrorCode.CANNOT_EDIT_DELETED_PROGRAM,
+                 "message": "Cannot edit comments on a report belonging to a deleted program."
+             })
 
         # Check if user can update this comment (only the author can update their own comments)
         if comment.user_id != user.id:
-            raise ForbiddenException("You can only update your own comments")
+            raise ForbiddenException(detail={
+                "code": ErrorCode.NOT_YOUR_COMMENT,
+                "message": "You can only update your own comments"
+            })
 
         # Update the comment
         updated_comment = await self.repository.update_comment(comment_id, update_data)
         if not updated_comment:
-            raise NotFoundException("Comment not found")
+            raise NotFoundException(detail={
+                "code": ErrorCode.COMMENT_NOT_FOUND,
+                "message": "Comment not found"
+            })
 
         return updated_comment

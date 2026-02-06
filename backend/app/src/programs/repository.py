@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 
 from app.core.exceptions import NotFoundException, AlreadyExistsException, BadRequestException
+from app.core.error_codes import ErrorCode
 from app.core.logging import get_logger
 from app.src.programs.models import Program, ProgramAsset, Reward, SeverityEnum
 from app.src.programs.schemas import ProgramBulkUpdate, ProgramCreate
@@ -84,9 +85,10 @@ class ProgramRepository:
 
         first_duplicate = existing_assets.scalars().first()
         if first_duplicate:
-            raise AlreadyExistsException(
-                f"Asset with identifier '{first_duplicate.identifier}' already exists in this program."
-            )
+            raise AlreadyExistsException(detail={
+                "code": ErrorCode.DUPLICATE_ASSET_IDENTIFIERS,
+                "message": f"Asset with identifier '{first_duplicate.identifier}' already exists in this program."
+            })
 
 
     async def create(self, program_data: ProgramCreate) -> Program:
@@ -138,7 +140,10 @@ class ProgramRepository:
         program = result.scalar_one_or_none()
 
         if not program:
-            raise NotFoundException("Program not found")
+            raise NotFoundException(detail={
+                "code": ErrorCode.PROGRAM_NOT_FOUND,
+                "message": "Program not found"
+            })
         return program
 
 
@@ -231,7 +236,10 @@ class ProgramRepository:
             final_asset_count = current_asset_count - delete_count + add_count
 
             if final_asset_count < 1:
-                raise BadRequestException("A program must have at least one asset.")
+                raise BadRequestException(detail={
+                    "code": ErrorCode.PROGRAM_MUST_HAVE_ASSET,
+                    "message": "A program must have at least one asset."
+                })
 
             # Delete specified assets.
             if update_data.assets.asset_ids_to_delete:

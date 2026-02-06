@@ -13,6 +13,7 @@ from slugify import slugify
 from app.src.organizations.models import Organization
 from app.src.users.models import User
 from app.core.exceptions import NotFoundException
+from app.core.error_codes import ErrorCode
 
 class OrganizationRepository:
     def __init__(self, session: AsyncSession):
@@ -50,7 +51,10 @@ class OrganizationRepository:
         )
         org = result.scalar_one_or_none()
         if not org:
-            raise NotFoundException("Organization not found")
+            raise NotFoundException(detail={
+                "code": ErrorCode.ORGANIZATION_NOT_FOUND,
+                "message": "Organization not found"
+            })
         return org
 
     async def create(self, name: str, logo_url: str | None = None) -> Organization:

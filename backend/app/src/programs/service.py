@@ -7,6 +7,7 @@ from app.src.programs.models import Program
 from app.src.programs.repository import ProgramRepository
 from app.src.programs.schemas import ProgramBulkUpdate, ProgramCreate
 from app.core.exceptions import AlreadyExistsException, NotFoundException
+from app.core.error_codes import ErrorCode
 from app.src.organizations.repository import OrganizationRepository
 from app.src.users.models import User
 
@@ -41,17 +42,19 @@ class ProgramService:
             program_data.organization_id
         )
         if existing_program:
-            raise AlreadyExistsException(
-                f"A program with the name '{program_data.name}' already exists in this organization."
-            )
+            raise AlreadyExistsException(detail={
+                "code": ErrorCode.PROGRAM_ALREADY_EXISTS,
+                "message": f"A program with the name '{program_data.name}' already exists in this organization."
+            })
         
         # Business Rule: Check for duplicate asset identifiers within the request payload.
         if program_data.assets:
             identifiers = [asset.identifier for asset in program_data.assets]
             if len(identifiers) != len(set(identifiers)):
-                raise AlreadyExistsException(
-                    "The request contains duplicate asset identifiers."
-                )
+                raise AlreadyExistsException(detail={
+                    "code": ErrorCode.DUPLICATE_ASSET_IDENTIFIERS,
+                    "message": "The request contains duplicate asset identifiers."
+                })
         
         return await self.repository.create(program_data)
 
@@ -134,21 +137,33 @@ class ProgramService:
         org_repo = OrganizationRepository(self.repository.session)
         organization = await org_repo.get_by_slug(organization_slug)
         if not organization:
-            raise NotFoundException("Organization not found")
+            raise NotFoundException(detail={
+                "code": ErrorCode.ORGANIZATION_NOT_FOUND,
+                "message": "Organization not found"
+            })
 
         program = await self.repository.get_by_slug(program_slug, organization.id)
         if not program:
-            raise NotFoundException("Program not found")
+            raise NotFoundException(detail={
+                "code": ErrorCode.PROGRAM_NOT_FOUND,
+                "message": "Program not found"
+            })
 
         if program.is_active:
             return program
 
         # If program is not active, strict checks apply
         if not user:
-            raise NotFoundException("Program not found")
+            raise NotFoundException(detail={
+                "code": ErrorCode.PROGRAM_NOT_FOUND,
+                "message": "Program not found"
+            })
 
         user_org_ids = {org.id for org in user.organizations}
         if organization.id not in user_org_ids:
-            raise NotFoundException("Program not found")
+            raise NotFoundException(detail={
+                "code": ErrorCode.PROGRAM_NOT_FOUND,
+                "message": "Program not found"
+            })
 
         return program

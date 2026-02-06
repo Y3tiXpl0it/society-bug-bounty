@@ -10,6 +10,7 @@ from app.core.config import settings
 from fastapi_users.exceptions import UserNotExists
 from app.src.users.manager import UserManager
 from app.core.exceptions import AlreadyExistsException, NotFoundException, BadRequestException
+from app.core.error_codes import ErrorCode
 
 from app.src.organizations.repository import OrganizationRepository
 from app.src.organizations.schemas import OrganizationCreate
@@ -43,7 +44,11 @@ class OrganizationService:
                 adapter = TypeAdapter(HttpUrl)
                 validated_logo_url = adapter.validate_python(logo_url)
             except ValidationError:
-                raise BadRequestException(f"Invalid logo URL provided: {logo_url}")
+                raise BadRequestException(detail={
+                    "code": ErrorCode.INVALID_LOGO_URL,
+                    "message": f"Invalid logo URL provided: {logo_url}",
+                    "params": {"url": logo_url}
+                })
 
         # Use the validated Pydantic model for internal consistency.
         org_data = OrganizationCreate(name=name, logo_url=validated_logo_url)
@@ -51,17 +56,21 @@ class OrganizationService:
         # Check for existing organization with the same name.
         existing_org = await self.repository.get_by_name(org_data.name)
         if existing_org:
-            raise AlreadyExistsException(
-                f"An organization with the name '{org_data.name}' already exists."
-            )
+            raise AlreadyExistsException(detail={
+                "code": ErrorCode.ORGANIZATION_ALREADY_EXISTS,
+                "message": f"An organization with the name '{org_data.name}' already exists.",
+                "params": {"name": org_data.name}
+            })
         
         # Generate slug and check for uniqueness.
         org_slug = slugify(org_data.name)
         existing_org_by_slug = await self.repository.get_by_slug(org_slug)
         if existing_org_by_slug:
-            raise AlreadyExistsException(
-                f"An organization with a similar name already exists, resulting in a duplicate URL."
-            )
+            raise AlreadyExistsException(detail={
+                "code": ErrorCode.ORGANIZATION_ALREADY_EXISTS,
+                "message": "An organization with a similar name already exists, resulting in a duplicate URL.",
+                "params": {"name": org_data.name}
+            })
         
         # Pass the plain string to the repository layer.
         logo_url_str = str(org_data.logo_url) if org_data.logo_url else None
@@ -75,7 +84,10 @@ class OrganizationService:
         """
         org = await self.repository.get_by_id_with_members(org_id)
         if not org:
-            raise NotFoundException("Organization not found")
+            raise NotFoundException(detail={
+                "code": ErrorCode.ORGANIZATION_NOT_FOUND,
+                "message": "Organization not found"
+            })
         return org
     
 
@@ -86,11 +98,19 @@ class OrganizationService:
         try:
             user = await self.user_manager.get_by_email(email)
         except UserNotExists:
-            raise NotFoundException(f"User with email '{email}' not found.")
+            raise NotFoundException(detail={
+                "code": ErrorCode.USER_NOT_FOUND,
+                "message": f"User with email '{email}' not found.",
+                "params": {"email": email}
+            })
 
         org = await self.repository.get_by_slug(org_slug) # <-- Search by slug
         if not org:
-            raise NotFoundException(f"Organization '{org_slug}' not found.")
+            raise NotFoundException(detail={
+                "code": ErrorCode.ORGANIZATION_NOT_FOUND,
+                "message": f"Organization '{org_slug}' not found.",
+                "params": {"slug": org_slug}
+            })
 
         org_with_members = await self.repository.get_by_id_with_members(org.id)
         await self.repository.add_user_to_org(user, org_with_members)
@@ -103,11 +123,19 @@ class OrganizationService:
         try:
             user = await self.user_manager.get_by_email(email)
         except UserNotExists:
-            raise NotFoundException(f"User with email '{email}' not found.")
+            raise NotFoundException(detail={
+                "code": ErrorCode.USER_NOT_FOUND,
+                "message": f"User with email '{email}' not found.",
+                "params": {"email": email}
+            })
 
         org = await self.repository.get_by_slug(org_slug) # <-- Search by slug
         if not org:
-            raise NotFoundException(f"Organization '{org_slug}' not found.")
+            raise NotFoundException(detail={
+                "code": ErrorCode.ORGANIZATION_NOT_FOUND,
+                "message": f"Organization '{org_slug}' not found.",
+                "params": {"slug": org_slug}
+            })
 
         org_with_members = await self.repository.get_by_id_with_members(org.id)
         await self.repository.remove_user_from_org(user, org_with_members)
@@ -121,7 +149,11 @@ class OrganizationService:
         # 1. Find the organization
         org = await self.repository.get_by_slug(org_slug)
         if not org:
-            raise NotFoundException(f"Organization '{org_slug}' not found.")
+            raise NotFoundException(detail={
+                "code": ErrorCode.ORGANIZATION_NOT_FOUND,
+                "message": f"Organization '{org_slug}' not found.",
+                "params": {"slug": org_slug}
+            })
 
         # If a logo already exists, we try to delete the old physical file
         if org.logo_url:

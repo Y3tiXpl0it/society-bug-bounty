@@ -3,6 +3,7 @@
 import axios from 'axios';
 import type { AxiosResponse, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 import toast from 'react-hot-toast';
+import i18n from '../i18n/config';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -207,7 +208,7 @@ export const apiFetch = async <T = any>(
         // 3. Execute Request
         return await instance(config);
     } catch (error: any) {
-        
+
         // 1. Network Errors (No Response)
         if (!error.response) {
             toast.error('Could not connect to the server. Check your connection.');
@@ -216,7 +217,15 @@ export const apiFetch = async <T = any>(
         else if (error.response.status >= 500) {
             toast.error('Internal server error. Try again later.');
         }
-        
+        // 3. Structured Backend Errors (i18n)
+        else if (error.response.data?.detail?.code) {
+            const { code, message, params } = error.response.data.detail;
+            // Try to translate. If key missing, it returns the key (which is the code).
+            // We can check if it exists or use a default.
+            const translatedMessage = i18n.t(`errors.${code}`, { defaultValue: message, ...params }) as string;
+            toast.error(translatedMessage);
+        }
+
         // 3. Other Errors are handled in the calling service/page
         throw error;
     }

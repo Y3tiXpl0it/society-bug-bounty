@@ -2,7 +2,7 @@
 import uuid
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
@@ -58,7 +58,7 @@ async def mark_notification_as_read(
     """
     Mark a specific notification as read.
     """
-    """
+
     service = NotificationService(db)
     await service.mark_notification_as_read(notification_id)
     return {"message": "Notification marked as read"}

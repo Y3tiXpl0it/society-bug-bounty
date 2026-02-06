@@ -5,6 +5,7 @@ import secrets
 from datetime import datetime, timezone
 from pathlib import Path
 from app.core.config import settings
+from app.core.error_codes import ErrorCode
 
 
 from fastapi import UploadFile
@@ -69,7 +70,10 @@ class UserService:
         )
         user = result.unique().scalar_one_or_none()
         if not user or not user.details:
-            raise NotFoundException("User details not found")
+            raise NotFoundException(detail={
+                "code": ErrorCode.USER_NOT_FOUND,
+                "message": "User details not found"
+            })
 
         # Check for username uniqueness (case-insensitive)
         if 'username' in details_update and details_update['username']:
@@ -82,7 +86,10 @@ class UserService:
                 )
             )
             if existing.scalar_one_or_none():
-                raise BadRequestException("Username already exists (case-insensitive)")
+                raise BadRequestException(detail={
+                    "code": ErrorCode.USERNAME_ALREADY_EXISTS,
+                    "message": "Username already exists (case-insensitive)"
+                })
 
             # Check blocklist
             blocked = await self.session.execute(
@@ -91,7 +98,10 @@ class UserService:
                 )
             )
             if blocked.scalar_one_or_none():
-                 raise BadRequestException("Username is not available")
+                 raise BadRequestException(detail={
+                     "code": ErrorCode.USERNAME_NOT_AVAILABLE,
+                     "message": "Username is not available"
+                 })
 
             # Check 30-day restriction
             if user.details.last_username_change:
@@ -105,7 +115,11 @@ class UserService:
                 days_since_change = (now - last_change).days
                 if days_since_change < 30:
                     remaining_days = 30 - days_since_change
-                    raise BadRequestException(f"You can only change your username once every 30 days. Please wait {remaining_days} more days.")
+                    raise BadRequestException(detail={
+                        "code": ErrorCode.USERNAME_CHANGE_RESTRICTED,
+                        "message": f"You can only change your username once every 30 days. Please wait {remaining_days} more days.",
+                        "params": {"days_remaining": remaining_days}
+                    })
 
             # Add old username to blocklist
             if user.details.username:
@@ -138,7 +152,10 @@ class UserService:
         # 1. Get user with their details
         user = await self.get_user_by_id(user_id)
         if not user:
-            raise NotFoundException("User not found")
+            raise NotFoundException(detail={
+                "code": ErrorCode.USER_NOT_FOUND,
+                "message": "User not found"
+            })
 
         # 2. Delete old avatar if it exists
         if user.details and user.details.avatar_url:
@@ -185,14 +202,22 @@ class UserService:
             )
         except Exception as e:
             logger.error(f"Error exchanging token: {e}")
-            raise BadRequestException("Failed to exchange token with Google")
+            raise BadRequestException(detail={
+                "code": ErrorCode.GOOGLE_LOGIN_FAILED,
+                "message": "Failed to exchange token with Google",
+                "params": {"error": str(e)}
+            })
 
         # 2. Retrieve User Info from Google
         try:
             google_sub, email = await google_service.get_user_info(token_data["access_token"])
         except Exception as e:
             logger.error(f"Error fetching user info: {e}")
-            raise BadRequestException("Failed to fetch user info from Google")
+            raise BadRequestException(detail={
+                "code": ErrorCode.GOOGLE_LOGIN_FAILED,
+                "message": "Failed to fetch user info from Google",
+                "params": {"error": str(e)}
+            })
 
         # 3. Find or Create User
         user = await self.get_user_by_email(email)
@@ -228,7 +253,11 @@ class UserService:
             except Exception as e:
                 logger.error(f"Error creating new user: {e}")
                 await self.session.rollback()
-                raise BadRequestException("Error creating user account")
+                raise BadRequestException(detail={
+                    "code": ErrorCode.LOGIN_FAILED,
+                    "message": "Error creating user account",
+                    "params": {"error": str(e)}
+                })
         else:
             # --- EXISTING USER ---
             # Logic to update existing user tokens could go here
