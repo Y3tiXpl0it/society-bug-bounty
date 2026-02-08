@@ -20,6 +20,7 @@ from fastapi_users.jwt import generate_jwt, decode_jwt
 
 from app.core.config import settings
 from app.core.logging import get_logger
+from app.core.exceptions import InternalServerException
 
 # Logger for authentication events
 logger = get_logger(__name__)
@@ -67,7 +68,8 @@ def get_jwt_strategy() -> JWTStrategy:
         ValueError: If JWT_SECRET is not configured.
     """
     if not settings.JWT_SECRET:
-        raise ValueError("JWT_SECRET must be configured in settings.")
+        logger.critical("JWT_SECRET is not configured!")
+        raise InternalServerException("JWT_SECRET must be configured in settings.")
     strategy = CustomJWTStrategy(
         secret=settings.JWT_SECRET,
         lifetime_seconds=ACCESS_TOKEN_LIFETIME

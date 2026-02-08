@@ -7,6 +7,8 @@ from pydantic import BaseModel, ConfigDict, field_validator
 from app.src.reports.models import ReportStatus, ReportEventType
 from app.src.programs.schemas import ProgramAssetRead, ProgramSummary
 from app.src.attachments.schemas import AttachmentResponse
+from app.core.error_codes import ErrorCode
+from pydantic_core import PydanticCustomError
 
 # Base properties that a hacker sends when creating a report
 class ReportCreateRequest(BaseModel):
@@ -19,23 +21,37 @@ class ReportCreateRequest(BaseModel):
     @classmethod
     def validate_title_length(cls, v: str) -> str:
         if len(v) < 5:
-            raise ValueError('Title must be at least 5 characters long')
+            raise PydanticCustomError(
+                ErrorCode.REPORT_TITLE_TOO_SHORT,
+                'Title must be at least 5 characters long',
+                {"min_length": 5}
+            )
         if len(v) > 120:
-            raise ValueError('Title must be at most 120 characters long')
+            raise PydanticCustomError(
+                ErrorCode.REPORT_TITLE_TOO_LONG,
+                'Title must be at most 120 characters long',
+                {"max_length": 120}
+            )
         return v
 
     @field_validator('severity')
     @classmethod
     def validate_severity_range(cls, v: float) -> float:
         if not (0 <= v <= 10):
-            raise ValueError('Severity must be between 0 and 10')
+            raise PydanticCustomError(
+                ErrorCode.REPORT_SEVERITY_RANGE,
+                'Severity must be between 0 and 10'
+            )
         return v
 
     @field_validator('severity')
     @classmethod
     def validate_severity_decimals(cls, v: float) -> float:
         if round(v, 1) != v:
-            raise ValueError('Severity must have at most one decimal place')
+            raise PydanticCustomError(
+                ErrorCode.REPORT_SEVERITY_DECIMALS,
+                'Severity must have at most one decimal place'
+            )
         return v
 
     @field_validator('description')
@@ -43,9 +59,17 @@ class ReportCreateRequest(BaseModel):
     def validate_description(cls, v: str) -> str:
         stripped = v.strip()
         if len(stripped) < 100:
-            raise ValueError('Description must be at least 100 characters long')
+            raise PydanticCustomError(
+                ErrorCode.REPORT_DESCRIPTION_TOO_SHORT,
+                'Description must be at least 100 characters long',
+                {"min_length": 100}
+            )
         if len(stripped) > 30000:
-            raise ValueError('Description must be at most 30000 characters long')
+            raise PydanticCustomError(
+                ErrorCode.REPORT_DESCRIPTION_TOO_LONG,
+                'Description must be at most 30000 characters long',
+                {"max_length": 30000}
+            )
         return v
 
 # Schema for creating the report internally (with IDs)
@@ -72,14 +96,20 @@ class ReportSeverityUpdate(BaseModel):
     @classmethod
     def validate_severity_range(cls, v: float) -> float:
         if not (0 <= v <= 10):
-            raise ValueError('Severity must be between 0 and 10')
+            raise PydanticCustomError(
+                ErrorCode.REPORT_SEVERITY_RANGE,
+                'Severity must be between 0 and 10'
+            )
         return v
 
     @field_validator('severity')
     @classmethod
     def validate_severity_decimals(cls, v: float) -> float:
         if round(v, 1) != v:
-            raise ValueError('Severity must have at most one decimal place')
+            raise PydanticCustomError(
+                ErrorCode.REPORT_SEVERITY_DECIMALS,
+                'Severity must have at most one decimal place'
+            )
         return v
 
 # Schema for the API response (what the client sees)
@@ -139,9 +169,16 @@ class ReportCommentCreate(BaseModel):
     def validate_content(cls, v: str) -> str:
         stripped = v.strip()
         if len(stripped) < 1:
-            raise ValueError('Content cannot be empty')
+            raise PydanticCustomError(
+                ErrorCode.COMMENT_CONTENT_EMPTY,
+                'Content cannot be empty'
+            )
         if len(stripped) > 10000:
-            raise ValueError('Content must be at most 10000 characters long')
+            raise PydanticCustomError(
+                ErrorCode.COMMENT_CONTENT_TOO_LONG,
+                'Content must be at most 10000 characters long',
+                {"max_length": 10000}
+            )
         return v
 
 # Schema for the API response, showing a comment

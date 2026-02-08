@@ -15,7 +15,7 @@ from urllib.parse import urlencode
 
 from app.core.config import settings
 from app.core.logging import get_logger
-from app.core.exceptions import BadRequestException
+from app.core.exceptions import BadRequestException, InternalServerException
 from app.core.error_codes import ErrorCode
 
 logger = get_logger(__name__)
@@ -48,7 +48,8 @@ class GoogleOAuthService:
         self.redirect_uri = settings.GOOGLE_REDIRECT_URI
 
         if not all([self.client_id, self.client_secret, self.redirect_uri]):
-            raise ValueError("Google OAuth credentials not properly configured")
+            logger.critical("Google OAuth credentials not properly configured")
+            raise InternalServerException("Google OAuth credentials not properly configured")
     
     def get_authorization_url(
         self,

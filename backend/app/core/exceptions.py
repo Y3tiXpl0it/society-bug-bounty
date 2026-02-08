@@ -4,6 +4,7 @@ from fastapi import HTTPException, status
 
 from typing import Any, Dict, Optional, Union
 from app.core.error_codes import ErrorCode
+from app.core.config import settings
 
 class NotFoundException(HTTPException):
     """Base exception for resource not found errors."""
@@ -54,3 +55,22 @@ class RequestEntityTooLargeException(HTTPException):
 
     def __init__(self, detail: str = "Request entity too large"):
         super().__init__(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=detail)
+
+
+class InternalServerException(HTTPException):
+    """Exception for internal server errors (500)."""
+
+    def __init__(self, internal_message: str):
+        public_detail = {
+            "code": ErrorCode.INTERNAL_ERROR,
+            "message": "An internal error occurred. Please contact support."
+        }
+        
+        if settings.DEBUG:
+            public_detail["debug_message"] = internal_message
+            
+        super().__init__(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            detail=public_detail
+        )
+

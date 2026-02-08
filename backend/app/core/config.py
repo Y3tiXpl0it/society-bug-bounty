@@ -4,7 +4,7 @@ This module handles the application's configuration management using Pydantic's 
 It reads settings from environment variables and provides a centralized 'settings' object.
 """
 from pydantic_settings import BaseSettings
-from pydantic import model_validator
+from pydantic import model_validator, field_validator
 from typing import Optional
 
 class Settings(BaseSettings):
@@ -102,6 +102,15 @@ class Settings(BaseSettings):
             )
             
         return self
+
+    @field_validator("JWT_SECRET", "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_REDIRECT_URI", "POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_DB")
+    @classmethod
+    def check_not_empty(cls, v: str) -> str:
+        """Validates that critical configuration values are not empty or whitespace."""
+        if not v or not v.strip():
+            raise ValueError("Configuration value cannot be empty or whitespace only")
+        return v
+
 
 # Instantiate the settings object for use throughout the application.
 # The type: ignore suppresses linter errors about missing environment variables,

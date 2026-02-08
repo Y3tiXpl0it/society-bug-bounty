@@ -5,7 +5,10 @@ from typing import Optional
 
 from fastapi_users import schemas
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+import re
 from app.src.organizations.schemas import OrganizationRead
+from app.core.error_codes import ErrorCode
+from pydantic_core import PydanticCustomError
 
 # --- Schemas for Reading User Data ---
 
@@ -28,7 +31,7 @@ class UserDetailsUpdateSchema(BaseModel):
     """
     Schema for updating user details. All fields are optional to allow partial updates.
     """
-    username: Optional[str] = Field(None, min_length=3, max_length=24, pattern=r'^[a-zA-Z0-9._-]+$')
+    username: Optional[str] = None
     profile_info: Optional[str] = None
     avatar_url: Optional[str] = None
     email_notifications_enabled: Optional[bool] = None
@@ -38,12 +41,33 @@ class UserDetailsUpdateSchema(BaseModel):
     @classmethod
     def validate_username(cls, v: Optional[str]) -> Optional[str]:
         if v is not None:
+            if len(v) < 3:
+                raise PydanticCustomError(
+                    ErrorCode.USER_USERNAME_TOO_SHORT,
+                    'Username must be at least 3 characters long',
+                    {"min_length": 3}
+                )
+            if len(v) > 24:
+                raise PydanticCustomError(
+                    ErrorCode.USER_USERNAME_TOO_LONG,
+                    'Username must be at most 24 characters long',
+                    {"max_length": 24}
+                )
+            if not re.match(r'^[a-zA-Z0-9._-]+$', v):
+                 raise PydanticCustomError(
+                    ErrorCode.USER_USERNAME_INVALID_PATTERN,
+                    'Username contains invalid characters'
+                )
+
             # Convert to lowercase for case-insensitive comparison
             v_lower = v.lower()
             # Reserved usernames (case-insensitive)
             reserved = {'admin', 'root', 'administrator', 'support', 'info'}
             if v_lower in reserved:
-                raise ValueError('Username is reserved and cannot be used')
+                raise PydanticCustomError(
+                    ErrorCode.USER_USERNAME_RESERVED,
+                    'Username is reserved and cannot be used'
+                )
         return v
 
     @field_validator('profile_info')
@@ -52,7 +76,11 @@ class UserDetailsUpdateSchema(BaseModel):
         if v is not None:
             stripped = v.strip()
             if len(stripped) > 500:
-                raise ValueError('Profile info must be at most 500 characters long')
+                raise PydanticCustomError(
+                    ErrorCode.USER_PROFILE_INFO_TOO_LONG,
+                    'Profile info must be at most 500 characters long',
+                    {"max_length": 500}
+                )
             return stripped
         return v
 

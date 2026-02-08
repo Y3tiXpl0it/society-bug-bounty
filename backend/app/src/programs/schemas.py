@@ -11,6 +11,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.src.programs.models import SeverityEnum
 from app.src.organizations.schemas import OrganizationRead
+from app.core.error_codes import ErrorCode
+from pydantic_core import PydanticCustomError
 
 
 # --- REWARD SCHEMAS ---
@@ -54,7 +56,10 @@ class ProgramAssetBase(BaseModel):
     def sanitize_identifier(cls, v: str) -> str:
         stripped = v.strip()
         if not stripped:
-            raise ValueError("Identifier cannot be empty")
+            raise PydanticCustomError(
+                ErrorCode.ASSET_IDENTIFIER_EMPTY,
+                "Identifier cannot be empty"
+            )
         return stripped
 
     @field_validator('description')
@@ -64,7 +69,11 @@ class ProgramAssetBase(BaseModel):
             return v
         stripped = v.strip()
         if len(stripped) > 1000:
-            raise ValueError("Description must be at most 1000 characters")
+            raise PydanticCustomError(
+                ErrorCode.ASSET_DESCRIPTION_TOO_LONG,
+                "Description must be at most 1000 characters",
+                {"max_length": 1000}
+            )
         return stripped
 
 class ProgramAssetCreate(ProgramAssetBase):
@@ -104,9 +113,17 @@ class ProgramBase(BaseModel):
     def validate_description(cls, v: str) -> str:
         stripped = v.strip()
         if len(stripped) < 100:
-            raise ValueError('Description must be at least 100 characters long')
+             raise PydanticCustomError(
+                ErrorCode.PROGRAM_DESCRIPTION_TOO_SHORT,
+                'Description must be at least 100 characters long',
+                {"min_length": 100}
+            )
         if len(stripped) > 30000:
-            raise ValueError('Description must be at most 30000 characters long')
+            raise PydanticCustomError(
+                ErrorCode.PROGRAM_DESCRIPTION_TOO_LONG,
+                'Description must be at most 30000 characters long',
+                {"max_length": 30000}
+            )
         return v
 
 class ProgramCreate(ProgramBase):
@@ -133,9 +150,17 @@ class ProgramUpdate(BaseModel):
         if v is not None:
             stripped = v.strip()
             if len(stripped) < 100:
-                raise ValueError('Description must be at least 100 characters long')
+                raise PydanticCustomError(
+                    ErrorCode.PROGRAM_DESCRIPTION_TOO_SHORT,
+                    'Description must be at least 100 characters long',
+                    {"min_length": 100}
+                )
             if len(stripped) > 30000:
-                raise ValueError('Description must be at most 30000 characters long')
+                raise PydanticCustomError(
+                    ErrorCode.PROGRAM_DESCRIPTION_TOO_LONG,
+                    'Description must be at most 30000 characters long',
+                    {"max_length": 30000}
+                )
         return v
 
 class ProgramBulkUpdate(BaseModel):
