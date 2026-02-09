@@ -1,22 +1,22 @@
 # backend/app/src/notifications/schemas.py
 import uuid
 from datetime import datetime
-from typing import Optional, Any
-from pydantic import BaseModel, ConfigDict, field_validator
-from app.src.notifications.models import NotificationRoleEnum
+from typing import Optional, Any, Annotated
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+from app.src.notifications.models import NotificationRoleEnum, NotificationTypeEnum
 
 
 class NotificationBase(BaseModel):
     """Base schema for notifications."""
-    title: str
-    message: str
+    title: Annotated[str, Field(min_length=1, max_length=200)]
+    message: Annotated[str, Field(min_length=1, max_length=5000)]
     related_entity_id: Optional[uuid.UUID] = None
 
 
 class NotificationCreate(NotificationBase):
     """Schema for creating notifications."""
     user_id: uuid.UUID
-    notification_type: str  # Will be validated against enum values
+    notification_type: NotificationTypeEnum
     recipient_role: NotificationRoleEnum = NotificationRoleEnum.HACKER
 
 

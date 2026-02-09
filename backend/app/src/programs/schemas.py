@@ -140,9 +140,16 @@ class ProgramUpdate(BaseModel):
     Schema for PATCH requests to update a program's top-level attributes.
     All fields are optional. This schema does not handle nested resources.
     """
-    name: str | None = None
+    name: Annotated[str, Field(min_length=2, max_length=120)] | None = None
     description: str | None = None
     is_active: bool | None = None
+
+    @field_validator('name')
+    @classmethod
+    def sanitize_name(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        return v.strip()
 
     @field_validator('description')
     @classmethod

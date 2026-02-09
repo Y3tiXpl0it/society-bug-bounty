@@ -65,7 +65,9 @@
         "USER_USERNAME_TOO_LONG": "El nombre de usuario no puede tener más de {{max_length}} caracteres.",
         "USER_USERNAME_INVALID_PATTERN": "El nombre de usuario contiene caracteres inválidos.",
         "USER_USERNAME_RESERVED": "Este nombre de usuario está reservado y no se puede utilizar.",
-        "USER_PROFILE_INFO_TOO_LONG": "La información del perfil no puede tener más de {{max_length}} caracteres."
+        "USER_PROFILE_INFO_TOO_LONG": "La información del perfil no puede tener más de {{max_length}} caracteres.",
+        "SELECT_AT_LEAST_ONE_ASSET": "Por favor selecciona al menos un activo.",
+        "INVALID_FILE_TYPE_OR_NAME": "Tipo de archivo inválido o nombre demasiado largo. Permitido: imágenes (JPEG, PNG, GIF) con nombres de hasta 255 caracteres."
     },
     "programs": {
         "title": "Programas",

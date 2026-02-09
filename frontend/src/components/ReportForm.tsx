@@ -14,24 +14,6 @@ interface ReportSubmitFormProps {
     assets: Asset[];
 }
 
-const reportSchema = z.object({
-    title: z.string().min(5, 'Title must be at least 5 characters').max(120, 'Title must be at most 120 characters'),
-    description: z
-        .string()
-        .min(100, 'Description must be at least 100 characters')
-        .max(30000, 'Description must be at most 30000 characters'),
-    severity: z.number().min(0, 'Severity must be at least 0').max(10, 'Severity must be at most 10'),
-    asset_ids: z.array(z.string()).min(1, 'At least one asset must be selected'),
-    files: z.array(z.instanceof(File)).refine(
-        (files) =>
-            files.every((file) => {
-                const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
-                return validTypes.includes(file.type) && file.name.length <= 255;
-            }),
-        'Invalid file type or name too long. Allowed: images (JPEG, PNG, GIF) with names up to 255 characters'
-    ),
-});
-
 const ReportSubmitForm: React.FC<ReportSubmitFormProps> = ({
     onSubmit,
     isSubmitting,
@@ -40,6 +22,29 @@ const ReportSubmitForm: React.FC<ReportSubmitFormProps> = ({
     assets,
 }) => {
     const { t } = useTranslation();
+
+    const reportSchema = z.object({
+        title: z.string()
+            .min(5, t('errors.REPORT_TITLE_TOO_SHORT', { min_length: 5 }))
+            .max(120, t('errors.REPORT_TITLE_TOO_LONG', { max_length: 120 })),
+        description: z
+            .string()
+            .min(100, t('errors.REPORT_DESCRIPTION_TOO_SHORT', { min_length: 100 }))
+            .max(30000, t('errors.REPORT_DESCRIPTION_TOO_LONG', { max_length: 30000 })),
+        severity: z.number()
+            .min(0, t('errors.REPORT_SEVERITY_RANGE')) // Assuming 0-10 range is standard explanation
+            .max(10, t('errors.REPORT_SEVERITY_RANGE')),
+        asset_ids: z.array(z.string()).min(1, t('errors.SELECT_AT_LEAST_ONE_ASSET')),
+        files: z.array(z.instanceof(File)).refine(
+            (files) =>
+                files.every((file) => {
+                    const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+                    return validTypes.includes(file.type) && file.name.length <= 255;
+                }),
+            t('errors.INVALID_FILE_TYPE_OR_NAME') // Need to add this key
+        ),
+    });
+
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState(`# Description
 
@@ -196,6 +201,7 @@ const ReportSubmitForm: React.FC<ReportSubmitFormProps> = ({
                                 onChange={(e) => setTitle(e.target.value)}
                                 className="w-full px-3 py-2 border border-gray-300 rounded text-color-primary focus:outline-none focus:border-indigo-500 focus:ring-indigo-500"
                                 required
+                                maxLength={120}
                             />
                         </div>
 

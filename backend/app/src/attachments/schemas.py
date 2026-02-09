@@ -4,6 +4,7 @@ Pydantic schemas for attachment data validation and serialization.
 import uuid
 from datetime import datetime
 
+from app.src.attachments.models import EntityType
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -13,7 +14,7 @@ class AttachmentCreate(BaseModel):
 
     Contains all necessary fields to store attachment metadata.
     """
-    entity_type: str = Field(description="Type of entity the attachment belongs to (e.g., 'report', 'report_comment', 'program')")
+    entity_type: EntityType = Field(description="Type of entity the attachment belongs to (e.g., 'report', 'report_comment', 'program')")
     entity_id: uuid.UUID = Field(description="ID of the entity the attachment belongs to")
     uploader_id: uuid.UUID
     file_path: str

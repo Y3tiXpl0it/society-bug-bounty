@@ -270,6 +270,7 @@ const ProfilePage: React.FC = () => {
                                         disabled={isSaving}
                                         className={`w-full px-3 py-2 border rounded text-gray-900 focus:outline-none focus:border-indigo-500 focus:ring-indigo-500 ${errors.username ? 'border-red-500' : 'border-gray-300'
                                             }`}
+                                        maxLength={24}
                                     />
                                     {errors.username && <p className="mt-1 text-sm text-red-600">{errors.username}</p>}
                                     <div className="mt-2 bg-yellow-50 border-l-4 border-yellow-400 p-4">

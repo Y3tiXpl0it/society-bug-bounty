@@ -65,7 +65,9 @@
         "USER_USERNAME_TOO_LONG": "Username must be at most {{max_length}} characters long.",
         "USER_USERNAME_INVALID_PATTERN": "Username contains invalid characters.",
         "USER_USERNAME_RESERVED": "Username is reserved and cannot be used.",
-        "USER_PROFILE_INFO_TOO_LONG": "Profile info must be at most {{max_length}} characters long."
+        "USER_PROFILE_INFO_TOO_LONG": "Profile info must be at most {{max_length}} characters long.",
+        "SELECT_AT_LEAST_ONE_ASSET": "Please select at least one asset.",
+        "INVALID_FILE_TYPE_OR_NAME": "Invalid file type or name too long. Allowed: images (JPEG, PNG, GIF) with names up to 255 characters."
     },
     "programs": {
         "title": "Programs",

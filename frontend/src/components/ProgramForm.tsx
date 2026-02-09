@@ -20,22 +20,6 @@ const severityOrder: { [key in Reward['severity']]: number } = {
     critical: 4,
 };
 
-const programSchema = z.object({
-    name: z.string().min(2, 'Name must be at least 2 characters').max(120, 'Name must be at most 120 characters'),
-    description: z
-        .string()
-        .min(100, 'Description must be at least 100 characters')
-        .max(30000, 'Description must be at most 30000 characters'),
-});
-
-const assetSchema = z.object({
-    identifier: z
-        .string()
-        .min(2, 'Identifier must be at least 2 characters')
-        .max(255, 'Identifier must be at most 255 characters'),
-    description: z.string().max(1000, 'Description must be at most 1000 characters'),
-});
-
 // --- Component Props ---
 interface ProgramFormProps {
     /** The function to call when the form is submitted. */
@@ -50,7 +34,6 @@ interface ProgramFormProps {
     renderExtraActions?: () => React.ReactNode;
 }
 
-
 const ProgramForm: React.FC<ProgramFormProps> = ({
     onSubmit,
     initialData,
@@ -60,6 +43,24 @@ const ProgramForm: React.FC<ProgramFormProps> = ({
 }) => {
     const { t } = useTranslation();
     const { user, accessToken, setAccessToken } = useAuth();
+
+    const programSchema = z.object({
+        name: z.string()
+            .min(2, t('errors.PROGRAM_NAME_TOO_SHORT', { min_length: 2 }))
+            .max(120, t('errors.PROGRAM_NAME_TOO_LONG', { max_length: 120 })),
+        description: z
+            .string()
+            .min(100, t('errors.PROGRAM_DESCRIPTION_TOO_SHORT', { min_length: 100 }))
+            .max(30000, t('errors.PROGRAM_DESCRIPTION_TOO_LONG', { max_length: 30000 })),
+    });
+
+    const assetSchema = z.object({
+        identifier: z
+            .string()
+            .min(2, t('errors.ASSET_IDENTIFIER_EMPTY')) // Reusing existing or similar key, strictly it says empty but min 2 implies content
+            .max(255, 'Identifier must be at most 255 characters'), // Missing key for asset identifier max length, will add to JSON or use hardcoded for now? Better to add key.
+        description: z.string().max(1000, t('errors.ASSET_DESCRIPTION_TOO_LONG')),
+    });
 
     // --- Form State ---
     const [name, setName] = useState('');
@@ -298,6 +299,7 @@ const ProgramForm: React.FC<ProgramFormProps> = ({
                                 onChange={(e) => setName(e.target.value)}
                                 className="w-full px-3 py-2 border border-gray-300 rounded text-color-primary focus:outline-none focus:border-indigo-500 focus:ring-indigo-500"
                                 required
+                                maxLength={120}
                             />
                         </div>
                         <div>

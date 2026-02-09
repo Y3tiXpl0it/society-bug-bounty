@@ -26,14 +26,6 @@ interface ReportHistoryAndCommentsProps {
     isProgramDeleted?: boolean;
 }
 
-const commentSchema = z.object({
-    content: z.string().min(1, 'Comment cannot be empty').max(10000, 'Comment must be at most 10000 characters'),
-});
-
-/**
- * Reusable component for displaying report history and comment functionality.
- * Combines the history timeline and comment editor in one component.
- */
 const ReportHistoryAndComments: React.FC<ReportHistoryAndCommentsProps> = ({
     reportId,
     reportDescription,
@@ -44,6 +36,12 @@ const ReportHistoryAndComments: React.FC<ReportHistoryAndCommentsProps> = ({
     isProgramDeleted = false
 }) => {
     const { t } = useTranslation();
+
+    const commentSchema = z.object({
+        content: z.string()
+            .min(1, t('errors.COMMENT_CONTENT_EMPTY'))
+            .max(10000, t('errors.COMMENT_CONTENT_TOO_LONG', { max_length: 10000 })),
+    });
     const [reportHistory, setReportHistory] = useState<ReportEvent[]>([]);
     const [loadingHistory, setLoadingHistory] = useState<boolean>(true);
     const [isSubmittingComment, setIsSubmittingComment] = useState<boolean>(false);

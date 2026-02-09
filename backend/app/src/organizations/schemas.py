@@ -4,6 +4,7 @@ This module contains the Pydantic schemas that define the data structures
 for the organization-related API requests and responses.
 """
 import uuid
+from typing import Annotated
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
 class OrganizationRead(BaseModel):
@@ -19,4 +20,4 @@ class OrganizationRead(BaseModel):
 class OrganizationCreate(BaseModel):
     """Schema for validating the request body when creating a new organization."""
     name: str = Field(max_length=120, pattern=r"^[\w\s&.,'+\-!()\/]+$")
-    logo_url: str | None = None
+    logo_url: Annotated[str, Field(max_length=500)] | None = None

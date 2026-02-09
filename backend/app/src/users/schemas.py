@@ -1,7 +1,7 @@
 # backend/app/src/users/schemas.py
 import uuid
 import datetime
-from typing import Optional
+from typing import Optional, Annotated
 
 from fastapi_users import schemas
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -33,7 +33,7 @@ class UserDetailsUpdateSchema(BaseModel):
     """
     username: Optional[str] = None
     profile_info: Optional[str] = None
-    avatar_url: Optional[str] = None
+    avatar_url: Annotated[Optional[str], Field(max_length=500)] = None
     email_notifications_enabled: Optional[bool] = None
     in_app_notifications_enabled: Optional[bool] = None
 
