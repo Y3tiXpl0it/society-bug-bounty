@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}Open Bug Bounty Notification{% endblock %}</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h2 style="color: #007bff;">Open Bug Bounty</h2>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            {% block content %}{% endblock %}
+        </div>
+        
+        <div style="font-size: 12px; color: #777; text-align: center; border-top: 1px solid #eee; padding-top: 10px;">
+            <p>You are receiving this email because you are a registered user of Open Bug Bounty.</p>
+        </div>
+    </div>
+</body>
+</html>

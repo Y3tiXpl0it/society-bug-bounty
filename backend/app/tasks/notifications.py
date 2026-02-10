@@ -16,6 +16,35 @@ logger = logging.getLogger(__name__)
 
 @celery_app.task(
     bind=True,
+    autoretry_for=(Exception,),
+    retry_kwargs={'max_retries': 3, 'countdown': 5},
+    name='notifications.send_email'
+)
+def send_email_notification_task(self, email_to: str, subject: str, template_name: str, template_body: dict):
+    """
+    Celery task to send an email asynchronously.
+    """
+    import asyncio
+    from app.src.notifications.email import send_email
+
+    try:
+        # Since Celery runs in a separate thread/process, we need to run the async send_email
+        # in an event loop.
+        loop = asyncio.get_event_loop()
+        if loop.is_closed():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        
+        loop.run_until_complete(send_email(email_to, subject, template_name, template_body))
+        
+        logger.info(f"📧 Email sent to {email_to}")
+    except Exception as e:
+        logger.error(f"❌ Failed to send email to {email_to}: {e}")
+        raise e
+
+
+@celery_app.task(
+    bind=True,
     autoretry_for=(ConnectionError, TimeoutError),
     retry_kwargs={'max_retries': 5, 'countdown': 2},
     retry_backoff=True,

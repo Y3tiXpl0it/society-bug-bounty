@@ -12,6 +12,15 @@ wheels = [
 ]
 
 [[package]]
+name = "aiosmtplib"
+version = "2.0.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/8f/66/64d78bcb36c0a3da4610d5564c0422cb726051fb5dbd136a8839d8b91574/aiosmtplib-2.0.2.tar.gz", hash = "sha256:138599a3227605d29a9081b646415e9e793796ca05322a78f69179f0135016a3", size = 56295, upload-time = "2023-06-03T19:48:36.957Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/66/be/6902c91523a5faedee22e260e17fc23521fd63b2fec46dd5e5fcda62da8f/aiosmtplib-2.0.2-py3-none-any.whl", hash = "sha256:1e631a7a3936d3e11c6a144fb8ffd94bb4a99b714f2cb433e825d88b698e37bc", size = 27149, upload-time = "2023-06-03T19:48:35.562Z" },
+]
+
+[[package]]
 name = "alembic"
 version = "1.17.2"
 source = { registry = "https://pypi.org/simple" }
@@ -183,6 +192,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/b9/6a/1405343016bce8354b29d90aad6b0bf6485b5e60404516e4b9a3a9646cf0/billiard-4.2.2.tar.gz", hash = "sha256:e815017a062b714958463e07ba15981d802dc53d41c5b69d28c5a7c238f8ecf3", size = 155592, upload-time = "2025-09-20T14:44:40.456Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a6/80/ef8dff49aae0e4430f81842f7403e14e0ca59db7bbaf7af41245b67c6b25/billiard-4.2.2-py3-none-any.whl", hash = "sha256:4bc05dcf0d1cc6addef470723aac2a6232f3c7ed7475b0b580473a9145829457", size = 86896, upload-time = "2025-09-20T14:44:39.157Z" },
+]
+
+[[package]]
+name = "blinker"
+version = "1.9.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/21/28/9b3f50ce0e048515135495f198351908d99540d69bfdc8c1d15b73dc55ce/blinker-1.9.0.tar.gz", hash = "sha256:b4ce2265a7abece45e7cc896e98dbebe6cead56bcf805a3d23136d145f5445bf", size = 22460, upload-time = "2024-11-08T17:25:47.436Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/10/cb/f2ad4230dc2eb1a74edf38f1a38b9b52277f75bef262d8908e60d957e13c/blinker-1.9.0-py3-none-any.whl", hash = "sha256:ba0efaa9080b619ff2f3459d1d500c57bddea4a6b424b60a91141db6fd2f08bc", size = 8458, upload-time = "2024-11-08T17:25:46.184Z" },
 ]
 
 [[package]]
@@ -393,6 +411,7 @@ dependencies = [
     { name = "asyncpg" },
     { name = "celery", extra = ["redis"] },
     { name = "fastapi" },
+    { name = "fastapi-mail" },
     { name = "fastapi-users", extra = ["sqlalchemy"] },
     { name = "fastapi-users-db-sqlalchemy" },
     { name = "flower" },
@@ -421,6 +440,7 @@ requires-dist = [
     { name = "asyncpg", specifier = "==0.30.0" },
     { name = "celery", extras = ["redis"], specifier = "==5.5.3" },
     { name = "fastapi", specifier = "==0.121.2" },
+    { name = "fastapi-mail", specifier = ">=1.4.1" },
     { name = "fastapi-users", extras = ["sqlalchemy"], specifier = "==15.0.1" },
     { name = "fastapi-users-db-sqlalchemy", specifier = "==7.0.0" },
     { name = "flower", specifier = "==2.0.1" },
@@ -440,6 +460,24 @@ requires-dist = [
     { name = "starlette", specifier = "==0.49.0" },
     { name = "typer", specifier = "==0.20.0" },
     { name = "uvicorn", specifier = "==0.37.0" },
+]
+
+[[package]]
+name = "fastapi-mail"
+version = "1.4.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "aiosmtplib" },
+    { name = "blinker" },
+    { name = "email-validator" },
+    { name = "jinja2" },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+    { name = "starlette" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5f/94/9fc53e33436368973071979bdb8cc31455e67daed4fbc301885459853d53/fastapi_mail-1.4.1.tar.gz", hash = "sha256:9095b713bd9d3abb02fe6d7abb637502aaf680b52e177d60f96273ef6bc8bb70", size = 13301, upload-time = "2023-07-18T18:53:20.407Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/89/a3/c94fac41f430dd1a5586061aed04c5f1f6478b488a581d0b7c0b7c95ea76/fastapi_mail-1.4.1-py3-none-any.whl", hash = "sha256:fa5ef23b2dea4d3ba4587f4bbb53f8f15274124998fb4e40629b3b636c76c398", size = 14736, upload-time = "2023-07-18T18:53:18.667Z" },
 ]
 
 [[package]]
@@ -589,6 +627,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/f1/70/7703c29685631f5a7590aa73f1f1d3fa9a380e654b86af429e0934a32f7d/idna-3.10.tar.gz", hash = "sha256:12f65c9b470abda6dc35cf8e63cc574b1c52b11df2c86030af0ac09b01b13ea9", size = 190490, upload-time = "2024-09-15T18:07:39.745Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/76/c6/c88e154df9c4e1a2a66ccf0005a88dfb2650c1dffb6f5ce603dfbd452ce3/idna-3.10-py3-none-any.whl", hash = "sha256:946d195a0d259cbba61165e88e65941f16e9b36ea6ddb97f00452bae8b1287d3", size = 70442, upload-time = "2024-09-15T18:07:37.964Z" },
+]
+
+[[package]]
+name = "jinja2"
+version = "3.1.6"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "markupsafe" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/df/bf/f7da0350254c0ed7c72f3e33cef02e048281fec7ecec5f032d4aac52226b/jinja2-3.1.6.tar.gz", hash = "sha256:0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d", size = 245115, upload-time = "2025-03-05T20:05:02.478Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl", hash = "sha256:85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67", size = 134899, upload-time = "2025-03-05T20:05:00.369Z" },
 ]
 
 [[package]]

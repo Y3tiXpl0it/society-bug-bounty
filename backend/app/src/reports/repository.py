@@ -43,12 +43,25 @@ class ReportRepository:
                 joinedload(Report.program).joinedload(Program.organization),
                 joinedload(Report.program).joinedload(Program.rewards),
                 selectinload(Report.assets).joinedload(ProgramAsset.asset_type),
+                 # Use selectinload for collections in async context
                 selectinload(Report.attachments)
             )
         )
         result = await self.session.execute(query)
         loaded_report = result.unique().scalar_one()
-        loaded_report.hacker_name = loaded_report.hacker.details.username
+        
+        # Explicitly set hacker_name if needed, or rely on relationship
+        if loaded_report.hacker and loaded_report.hacker.details:
+             loaded_report.hacker_name = loaded_report.hacker.details.username
+             
+        # Force loading of attachments to avoid MissingGreenlet during Pydantic validation
+        # Pydantic v2 calls .attachments which triggers the load. 
+        # Since we used selectinload, it should be loaded. 
+        # However, to be absolutely safe against "await_only" errors if the loop context changes:
+        # We can inspect the attribute to ensure present.
+        _ = loaded_report.assets
+        _ = loaded_report.attachments
+        
         return loaded_report
 
     async def get_by_id(self, report_id: uuid.UUID) -> Report | None:

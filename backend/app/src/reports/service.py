@@ -111,11 +111,11 @@ class ReportService:
 
         # 4. Refresh to get full data (including generated IDs/timestamps)
         # We need to re-fetch to ensure we have the fresh state for notifications/response
-        # Using repository.get_by_id which is cleaner than refresh() for complex relationships sometimes,
-        # but refresh() is also fine. Let's use get_by_id to match original route logic "new_report = await report_service.repository.get_by_id(new_report.id)"
-        # actually refresh(new_report) should work if the session is alive. 
-        # But let's stick to the robust pattern:
-        await self.repository.session.refresh(new_report)
+        # Using repository.get_by_id which is cleaner than refresh() for complex relationships sometimes.
+        # This fixes "MissingGreenlet" errors because get_by_id eagerly loads everything.
+        new_report = await self.repository.get_by_id(new_report.id)
+        if not new_report:
+            raise NotFoundException(detail={"code": ErrorCode.REPORT_NOT_FOUND, "message": "Report created but not found."})
         
         # 5. Send notifications (after commit)
         try:

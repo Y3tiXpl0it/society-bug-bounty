@@ -33,6 +33,7 @@ dependencies = [
     "flower==2.0.1",
     "redis>=5.0.0",
     "gunicorn==23.0.0",
+    "fastapi-mail>=1.4.1",
 ]
 
 [project.scripts]
