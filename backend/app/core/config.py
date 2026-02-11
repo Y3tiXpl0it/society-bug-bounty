@@ -9,7 +9,7 @@ from typing import Optional
 
 class Settings(BaseSettings):
     """Application settings."""
-    PROJECT_NAME: str = "Open Bug Bounty"
+    PROJECT_NAME: str = "Society Bug Bounty"
     DEBUG: bool = False
 
     DB_POOL_SIZE: int = 20       # Connection pool size
@@ -70,6 +70,10 @@ class Settings(BaseSettings):
     MAIL_SSL_TLS: bool = False
     USE_CREDENTIALS: bool = True
     VALIDATE_CERTS: bool = True
+    
+    # Delay in seconds for non-critical email notifications (e.g. comments)
+    # Default to 0 if not set (no delay)
+    NOTIFICATIONS_EMAIL_DELAY_SECONDS: int = 0
 
     # --- CORS Settings ---
     CORS_ALLOWED_ORIGINS: str = "http://localhost,http://127.0.0.1,http://localhost:8000"

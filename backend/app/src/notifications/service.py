@@ -1,5 +1,5 @@
-# backend/app/src/notifications/service.py
 import uuid
+import logging
 from typing import List, Optional, Union, Dict, cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -40,6 +40,11 @@ class NotificationService:
             # Convert Pydantic schema to a simple dictionary (JSON)
             data_dict = notification_data.model_dump()
 
+            # Pre-generate ID to coordinate with Email Smart Check
+            # This allows us to pass the ID to the email task so it can check if the notification was read.
+            notification_id = uuid.uuid4()
+            data_dict['id'] = str(notification_id)
+
             # Convert UUIDs to strings so JSON doesn't fail
             data_dict['user_id'] = str(data_dict['user_id'])
             if data_dict.get('related_entity_id'):
@@ -59,22 +64,15 @@ class NotificationService:
             task.delay(data_dict)
 
             # --- EMAIL NOTIFICATION INTEGRATION ---
+            # --- EMAIL NOTIFICATION INTEGRATION ---
             if send_email:
-                # We need to fetch the user's email first. 
-                # Since we are in async context, we can query it.
-                # However, to avoid overhead, we might only do this if we are sure we want to send it.
-                # For now, let's enqueue a separate task that handles the fetching and sending
-                # OR pass the email if we have it.
-                
-                # Better approach: Create a new specialized task or do it here if we have the user object.
-                # But here we only have user_id. 
-                
-                # Let's use a helper method to fetch email and dispatch task
+                # Dispatch to background task which handles fetching and checking preferences
                 await self._dispatch_email_notification(
                     notification_data.user_id,
                     notification_data.title,
                     notification_data.message,
-                    notification_data.notification_type
+                    notification_data.notification_type,
+                    notification_id=notification_id
                 )
 
             return {"status": "queued", "message": "Notification creation queued"}
@@ -126,63 +124,59 @@ class NotificationService:
     #  HELPER METHODS (Business logic and recipients are defined here)
     # =========================================================================
 
-    async def _dispatch_email_notification(self, user_id: uuid.UUID, title: str, message: str, type_enum: NotificationTypeEnum):
+    async def _dispatch_email_notification(
+        self, 
+        user_id: uuid.UUID, 
+        title: str, 
+        message: str, 
+        type_enum: NotificationTypeEnum,
+        notification_id: Optional[Union[uuid.UUID, str]] = None
+    ):
         """
-        Helper to check preferences and dispatch email task.
+        Helper to enqueue email task.
+        User fetching and preference checking is now handled in the background task.
         """
-        from app.tasks.notifications import send_email_notification_task
-        from sqlalchemy import select
-        from sqlalchemy.orm import joinedload
-        from app.core.logging import logging
+        from app.tasks.notifications import process_and_send_email_task
+        from app.core.config import settings
         
         logger = logging.getLogger(__name__)
         
-        # 1. Fetch User with preferences (explicit join to be safe)
-        # We need the email and the preferences (User.details)
-        stmt = (
-            select(User)
-            .where(User.id == user_id)
-            .options(joinedload(User.details))
-        )
-        result = await self.repository.execute(stmt)
-        user = result.unique().scalar_one_or_none()
+        # Dispatch the specialized task
+        # We pass the user_id and the email content.
+        # The task will handle fetching the user, checking preferences, and sending the email.
         
-        if not user or not user.email:
-            logger.warning(f"📧 Skipping email for user {user_id}: User not found or no email")
-            return
-
-        # 2. Check Preferences
-        # If details exist, check the flag. If no details, we assume enabled (or create default details)
-        # The model sets default=True for email_notifications_enabled
-        if user.details:
-            if not user.details.email_notifications_enabled:
-                logger.info(f"📧 Skipping email for user {user_id}: Email notifications disabled")
-                return
-        else:
-            # If no details, we might want to be permissive or restrictive. 
-            # Given the model defaults to True, we proceed.
-            logger.info(f"📧 User {user_id} has no details, proceeding with email (default True)")
-            pass
-            
-        # 3. Dispatch Task
-        try:
-            task = cast(CeleryTask, send_email_notification_task)
-            
-            template_body = {
+        email_data = {
+            "subject": title,
+            "template_name": "notification.html",
+            "template_body": {
                 "title": title,
-                "message": message,
-                # "action_url": "..." # Context dependent
+                "message": message
+                # "action_url": "..." 
             }
+        }
+        
+        # Priority / Delay logic
+        delay = 0
+        if type_enum == NotificationTypeEnum.comment_added:
+            delay = settings.NOTIFICATIONS_EMAIL_DELAY_SECONDS
             
-            logger.info(f"📧 Dispatching email task to {user.email}")
-            task.delay(
-                email_to=user.email,
-                subject=title,
-                template_name="notification.html",
-                template_body=template_body
+        try:
+            task = cast(CeleryTask, process_and_send_email_task)
+            
+            # If delayed, we log it differently
+            if delay > 0:
+                logger.info(f"📧 Enqueuing DELAYED email task for user {user_id} (Delay: {delay}s)")
+            else:
+                logger.info(f"📧 Enqueuing email processing task for user {user_id}")
+                
+            task.apply_async(
+                args=[str(user_id), email_data],
+                kwargs={"notification_id": str(notification_id) if notification_id else None},
+                countdown=delay
             )
         except Exception as e:
-            logger.error(f"❌ Failed to dispatch email task: {e}")
+            logger.error(f"❌ Failed to enqueue email processing task: {e}")
+
 
     async def create_comment_notification(
         self,

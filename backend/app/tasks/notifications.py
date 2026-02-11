@@ -231,3 +231,106 @@ def test_celery_task(message: str) -> str:
     """
     logger.info(f"🧪 Test task received: {message}")
     return f"Processed: {message}"
+
+
+@celery_app.task(
+    bind=True,
+    autoretry_for=(Exception,),
+    retry_kwargs={'max_retries': 3, 'countdown': 5},
+    name='notifications.process_and_send_email'
+)
+def process_and_send_email_task(self, user_id: str, email_data: dict, notification_id: str | None = None):
+    """
+    Celery task to fetch user details and send email if preferences allow.
+    
+    Args:
+        user_id: UUID string of the recipient user
+        email_data: Dictionary containing:
+            - subject: str
+            - template_name: str
+            - template_body: dict
+        notification_id: Optional UUID string of the notification to check 'read' status.
+                         If provided and notification is read, email is skipped (Smart Check).
+    """
+    try:
+        from sqlalchemy import create_engine, select
+        from sqlalchemy.orm import sessionmaker, joinedload
+        from app.core.config import settings
+        from app.src.users.models import User
+        from app.src.notifications.models import Notification
+        
+        # Setup sync DB connection
+        db_url = cast(str, settings.DATABASE_URL)
+        engine = create_engine(
+            db_url.replace('+asyncpg', '+psycopg'),
+            pool_pre_ping=True
+        )
+        Session = sessionmaker(bind=engine)
+        session = Session()
+        
+        try:
+            # 0. Smart Check (Notification Read Status)
+            if notification_id:
+                notif = session.get(Notification, notification_id)
+                if notif and notif.is_read:
+                    logger.info(f"📧 Smart Check: Skipping email for user {user_id} (Notification {notification_id} already read)")
+                    return
+
+            # 1. Fetch User with preferences
+            stmt = (
+                select(User)
+                .where(User.id == user_id)
+                .options(joinedload(User.details))
+            )
+            user = session.execute(stmt).unique().scalar_one_or_none()
+            
+            if not user or not user.email:
+                logger.warning(f"📧 Skipping email for user {user_id}: User not found or no email")
+                return
+            
+            # 2. Check Preferences
+            if user.details:
+                if not user.details.email_notifications_enabled:
+                    logger.info(f"📧 Skipping email for user {user_id}: Email notifications disabled")
+                    return
+            else:
+                # Default to True if no details found
+                logger.info(f"📧 User {user_id} has no details, proceeding with email (default True)")
+                
+            # 3. Send Email
+            # We can call the other task directly or just call the logic.
+            # Calling the task adds another layer of Celery overhead/retries usually not needed 
+            # if we are already in a task, but for consistency we can use the helper function logic.
+            # However, `send_email_notification_task` uses `asyncio.run` which might conflict if we were async.
+            # But we are in a sync task here.
+            
+            # Use the existing task logic by calling it synchronously or effectively inlining it
+            # To keep it simple and reuse the retry logic of the *sending* part, we can just call the 
+            # `send_email_notification_task` *implementation* (not via delay) if we want, 
+            # OR just duplicate the tiny sending logic.
+            
+            # Reusing the existing task via .apply() is synchronous but effective.
+            # preventing double logging/retries might be better by just calling the async logic directly here.
+            import asyncio
+            from app.src.notifications.email import send_email
+            
+            email_to = user.email
+            subject = email_data.get('subject')
+            template_name = email_data.get('template_name')
+            template_body = email_data.get('template_body')
+            
+            loop = asyncio.get_event_loop()
+            if loop.is_closed():
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            
+            loop.run_until_complete(send_email(email_to, subject, template_name, template_body))
+            logger.info(f"📧 Email processed and sent to {email_to}")
+            
+        finally:
+            session.close()
+            engine.dispose()
+            
+    except Exception as e:
+        logger.error(f"❌ Failed to process email for user {user_id}: {e}")
+        raise e
