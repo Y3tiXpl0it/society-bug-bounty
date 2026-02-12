@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import reportService from '../services/reportService';
+import notificationService from '../services/notificationService'; // Import notificationService
 import StatusSelector from '../components/StatusSelector';
 import SeverityInput from '../components/SeverityInput';
 import ReportHistoryAndComments from '../components/ReportHistoryAndComments';
@@ -45,6 +46,16 @@ const ReportDetailPage: React.FC = () => {
         },
         enabled: !!reportId,
     });
+
+    // --- Auto-Mark Notifications as Read ---
+    // When the user views the report, mark all related notifications as read.
+    // This helps the Smart Check logic on the backend to skip sending emails.
+    React.useEffect(() => {
+        if (reportId && accessToken) {
+            notificationService.markRelatedNotificationsAsRead(accessToken, reportId, setAccessToken)
+                .catch(err => console.error("Failed to mark related notifications as read", err));
+        }
+    }, [reportId, accessToken, setAccessToken]);
 
     // -------------------------------------------------------------------------
     // 2. Mutations (Update Status & Severity)

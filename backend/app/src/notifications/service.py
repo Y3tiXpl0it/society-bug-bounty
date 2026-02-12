@@ -120,6 +120,9 @@ class NotificationService:
     async def mark_all_as_read(self, user_id: uuid.UUID) -> int:
         return await self.notification_repo.mark_all_as_read(user_id)
 
+    async def mark_notifications_as_read_by_entity(self, user_id: uuid.UUID, related_entity_id: uuid.UUID) -> int:
+        return await self.notification_repo.mark_all_as_read_by_entity(user_id, related_entity_id)
+
     # =========================================================================
     #  HELPER METHODS (Business logic and recipients are defined here)
     # =========================================================================

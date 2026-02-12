@@ -45,6 +45,19 @@ class NotificationService {
     ): Promise<void> {
         await apiPatch('/notifications/mark-all-read', accessToken, {}, onTokenRefresh);
     }
+
+    /**
+     * Mark all notifications related to a specific entity as read
+     */
+    async markRelatedNotificationsAsRead(
+        accessToken: string | null,
+        entityId: string,
+        onTokenRefresh?: (newToken: string) => void
+    ): Promise<void> {
+        await import('../utils/apiClient').then(({ apiPost }) =>
+            apiPost(`/notifications/mark-read/entity/${entityId}`, accessToken, {}, onTokenRefresh)
+        );
+    }
 }
 
 const notificationService = new NotificationService();

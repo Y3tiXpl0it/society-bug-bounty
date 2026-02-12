@@ -78,6 +78,23 @@ class NotificationRepository:
         return count
 
 
+    async def mark_all_as_read_by_entity(self, user_id: uuid.UUID, related_entity_id: uuid.UUID) -> int:
+        """Mark all notifications for a user and specific entity as read."""
+        stmt = (
+            update(Notification)
+            .where(
+                Notification.user_id == user_id,
+                Notification.related_entity_id == related_entity_id,
+                Notification.is_read == False
+            )
+            .values(is_read=True)
+        )
+        result = cast(CursorResult[Any], await self.session.execute(stmt))
+        await self.session.commit()
+        count = result.rowcount
+        return count
+
+
     async def get_notification_type_id(self, type_name: str) -> Optional[int]:
         """Get notification type ID by name."""
         from app.src.notifications.models import NotificationType

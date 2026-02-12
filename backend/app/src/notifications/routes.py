@@ -76,3 +76,19 @@ async def mark_all_as_read(
     count = await service.mark_all_as_read(current_user.id)
     return {"message": f"{count} notifications marked as read", "count": count}
 
+    return {"message": f"{count} notifications marked as read", "count": count}
+
+
+@router.post("/mark-read/entity/{entity_id}")
+async def mark_notifications_by_entity_as_read(
+    entity_id: uuid.UUID,
+    db: AsyncSession = Depends(get_session),
+    current_user: User = Depends(fastapi_users_instance.current_user())
+):
+    """
+    Mark all notifications related to a specific entity (e.g. report) as read.
+    Useful when a user visits the entity page.
+    """
+    service = NotificationService(db)
+    count = await service.mark_notifications_as_read_by_entity(current_user.id, entity_id)
+    return {"message": f"{count} notifications marked as read", "count": count}
