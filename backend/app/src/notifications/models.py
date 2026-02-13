@@ -62,7 +62,6 @@ class Notification(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
     notification_type_id: Mapped[int] = mapped_column(ForeignKey("notification_types.id"), nullable=False)
 
-    title: Mapped[str] = mapped_column(String(200), nullable=False)
     message: Mapped[str] = mapped_column(Text, nullable=False)
     
     # Track if the notification has been read

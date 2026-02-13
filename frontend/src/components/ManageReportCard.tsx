@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import type { ReportSummary } from '../types/reportTypes';
 import { getSeverityInfo } from '../utils/severityHelper';
 import { getStatusInfo } from '../utils/statusHelper';
+import { formatDate } from '../utils/dateHelper';
 
 interface ManageReportCardProps {
     report: ReportSummary;
@@ -32,7 +33,7 @@ const ManageReportCard: React.FC<ManageReportCardProps> = ({ report }) => {
                         </span>
                         <span>
                             {t('components.manageReportCard.submittedBy')} <strong>{report.hacker_name}</strong> {t('components.manageReportCard.on')}{' '}
-                            <strong>{new Date(report.created_at).toLocaleDateString()}</strong>
+                            <strong>{formatDate(report.created_at)}</strong>
                         </span>
                     </div>
                 </div>

@@ -11,6 +11,7 @@ import ReportHistoryAndComments from '../components/ReportHistoryAndComments';
 import { AsyncContent } from '../components/AsyncContent';
 import { getSeverityInfo } from '../utils/severityHelper';
 import { getStatusInfo } from '../utils/statusHelper';
+import { formatDateTime } from '../utils/dateHelper';
 
 /**
  * My Reports page for managing comments on reports.
@@ -198,11 +199,11 @@ const MyReportsPage: React.FC = () => {
                                             <div>
                                                 <div className="flex items-center mb-2">
                                                     <p className="text-sm text-gray-500">{t('myReports.labels.submitted')}</p>
-                                                    <p className="text-sm text-gray-900 ml-2">{new Date(selectedReportSummary.created_at).toLocaleString()}</p>
+                                                    <p className="text-sm text-gray-900 ml-2">{formatDateTime(selectedReportSummary.created_at)}</p>
                                                 </div>
                                                 <div className="flex items-center">
                                                     <p className="text-sm text-gray-500">{t('myReports.labels.lastUpdated')}</p>
-                                                    <p className="text-sm text-gray-900 ml-2">{new Date(selectedReportSummary.updated_at).toLocaleString()}</p>
+                                                    <p className="text-sm text-gray-900 ml-2">{formatDateTime(selectedReportSummary.updated_at)}</p>
                                                 </div>
                                             </div>
                                         </div>

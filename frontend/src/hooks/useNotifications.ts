@@ -32,7 +32,6 @@ export const useNotifications = () => {
         const newNotification: Notification = {
             id: eventData.id,
             user_id: eventData.user_id,
-            title: eventData.title,
             message: eventData.message,
             is_read: false, // New notifications are always unread
             severity: eventData.severity,

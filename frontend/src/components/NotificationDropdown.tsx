@@ -3,8 +3,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Notification } from '../types/notificationTypes';
 import { NotificationRole } from '../types/notificationTypes';
-import StatusBadge from './StatusBadge';
-import SeverityBadge from './SeverityBadge';
+import { getTranslatedStatus } from '../utils/statusHelper';
+import { getTranslatedSeverity } from '../utils/severityHelper';
 
 interface NotificationDropdownProps {
     notifications: Notification[];
@@ -114,31 +114,66 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     };
 
     const renderNotificationMessage = (notification: Notification) => {
-        // Parse status change notifications (format: "old_status|new_status")
+        let params: Record<string, any> = {};
+        let isJson = false;
+
+        try {
+            if (notification.message.startsWith('{') || notification.message.startsWith('[')) {
+                params = JSON.parse(notification.message);
+                isJson = true;
+            }
+        } catch (e) {
+            // Not JSON or malformed, fallback to legacy
+        }
+
+        if (isJson) {
+            // Translate params if they are status or severity
+            if (params.old_status) params.old_status = getTranslatedStatus(params.old_status, t);
+            if (params.new_status) params.new_status = getTranslatedStatus(params.new_status, t);
+
+            if (params.old_severity) params.old_severity = getTranslatedSeverity(params.old_severity, t);
+            if (params.new_severity) params.new_severity = getTranslatedSeverity(params.new_severity, t);
+
+            const translationKey = `notifications.${notification.notification_type}.message`;
+            return (
+                <p className="text-sm text-gray-600 mt-1">
+                    {t(translationKey, params) as string}
+                </p>
+            );
+        }
+
+        // --- LEGACY FALLBACKS ---
+
+
+        // Parse status change notifications
         if (notification.notification_type === 'status_changed') {
             const [oldStatus, newStatus] = notification.message.split('|');
+            // If it's a pipe-separated string, we need to translate the parts
+            // However, most new notifications will come as JSON and be handled by the block above.
+            // This block handles legacy plain-text messages if any exist.
             return (
                 <div className="flex items-center gap-2 flex-wrap mt-1">
-                    <StatusBadge status={oldStatus} />
+                    <span className="text-xs font-semibold">{getTranslatedStatus(oldStatus, t)}</span>
                     <span className="text-gray-400">→</span>
-                    <StatusBadge status={newStatus} />
+                    <span className="text-xs font-semibold">{getTranslatedStatus(newStatus, t)}</span>
                 </div>
             );
         }
 
-        // Parse severity change notifications (format: "old_severity|new_severity")
+        // Parse severity change notifications
         if (notification.notification_type === 'severity_changed') {
             const [oldSeverity, newSeverity] = notification.message.split('|');
             return (
                 <div className="flex items-center gap-2 flex-wrap mt-1">
-                    <SeverityBadge severity={parseFloat(oldSeverity)} />
+                    <span className="text-xs font-semibold">{getTranslatedSeverity(oldSeverity, t)}</span>
                     <span className="text-gray-400">→</span>
-                    <SeverityBadge severity={parseFloat(newSeverity)} />
+                    <span className="text-xs font-semibold">{getTranslatedSeverity(newSeverity, t)}</span>
                 </div>
             );
         }
 
-        // For other notifications, display the message as text
+
+        // For other legacy notifications, display the message as text
         return (
             <p className="text-sm text-gray-600 mt-1">
                 {notification.message}
@@ -194,7 +229,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                                             <div className="flex justify-between items-start">
                                                 <div className="flex-1">
                                                     <p className="text-sm font-medium text-gray-900">
-                                                        {notification.title}
+                                                        {t(`notifications.${notification.notification_type}.title`)}
                                                     </p>
                                                     {renderNotificationMessage(notification)}
                                                     <p className="text-xs text-gray-400 mt-1">

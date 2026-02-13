@@ -31,3 +31,23 @@ const statusOptions: StatusInfo[] = [
 export const getStatusInfo = (status: string): StatusInfo => {
     return statusOptions.find(option => option.value === status) || statusOptions[0];
 };
+
+/**
+ * Gets the translated label for a given status.
+ * @param status - The status value
+ * @param t - The translation function from i18next
+ * @returns The translated status label
+ */
+export const getTranslatedStatus = (status: string, t: (key: string) => string): string => {
+    const keyMap: Record<string, string> = {
+        'received': 'received',
+        'in_review': 'inReview',
+        'accepted': 'accepted',
+        'rejected': 'rejected',
+        'duplicate': 'duplicate',
+        'out_of_scope': 'outOfScope',
+        'resolved': 'resolved',
+    };
+    const key = keyMap[status];
+    return key ? t(`components.statusSelector.${key}`) : getStatusInfo(status).label;
+};

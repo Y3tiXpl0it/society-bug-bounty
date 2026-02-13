@@ -10,6 +10,7 @@ import SeverityInput from '../components/SeverityInput';
 import ReportHistoryAndComments from '../components/ReportHistoryAndComments';
 import StatusBadge from '../components/StatusBadge';
 import SeverityBadge from '../components/SeverityBadge';
+import { formatDateTime } from '../utils/dateHelper';
 import { useAuth } from '../hooks/useAuth';
 import { AsyncContent } from '../components/AsyncContent';
 
@@ -203,11 +204,11 @@ const ReportDetailPage: React.FC = () => {
                                         <div>
                                             <div className="flex items-center mb-2">
                                                 <p className="text-sm text-gray-500">{t('reportDetail.labels.submitted')}</p>
-                                                <p className="text-sm text-gray-900 ml-2">{new Date(report.created_at).toLocaleString()}</p>
+                                                <p className="text-sm text-gray-900 ml-2">{formatDateTime(report.created_at)}</p>
                                             </div>
                                             <div className="flex items-center">
                                                 <p className="text-sm text-gray-500">{t('reportDetail.labels.lastUpdated')}</p>
-                                                <p className="text-sm text-gray-900 ml-2">{new Date(report.updated_at).toLocaleString()}</p>
+                                                <p className="text-sm text-gray-900 ml-2">{formatDateTime(report.updated_at)}</p>
                                             </div>
                                         </div>
                                     </div>

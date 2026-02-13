@@ -13,6 +13,7 @@ import remarkGfm from 'remark-gfm';
 // @ts-ignore
 import rehypeFigure from 'rehype-figure';
 import { rehypePlugins } from '../utils/markdownUtils';
+import { formatDateTime } from '../utils/dateHelper';
 import Avatar from 'boring-avatars';
 
 interface ReportHistoryItemProps {
@@ -148,7 +149,7 @@ const ReportHistoryItem: React.FC<ReportHistoryItemProps> = ({
                         )}
                     </div>
                     <span className="text-sm text-gray-500 flex-shrink-0">
-                        {new Date(event.created_at).toLocaleString()}
+                        {formatDateTime(event.created_at)}
                     </span>
                 </div>
 

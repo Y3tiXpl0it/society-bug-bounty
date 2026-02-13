@@ -1,7 +1,7 @@
 // frontend/src/components/StatusSelector.tsx
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getStatusInfo } from '../utils/statusHelper';
+import { getStatusInfo, getTranslatedStatus } from '../utils/statusHelper';
 
 interface StatusSelectorProps {
     currentStatus: string;
@@ -61,7 +61,7 @@ const StatusSelector: React.FC<StatusSelectorProps> = ({
                 <span
                     className={`px-2.5 py-1 text-xs font-semibold rounded-full ${statusInfo.color}`}
                 >
-                    {statusInfo.label}
+                    {getTranslatedStatus(statusInfo.value, t)}
                 </span>
                 <button
                     onClick={toggleOpen}

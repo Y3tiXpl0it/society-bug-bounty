@@ -43,3 +43,27 @@ export const formatSeverityDisplay = (severity: number | null): string => {
     const score = severity ? severity.toFixed(1) : '0.0';
     return `${info.category} (${score})`;
 };
+
+/**
+ * Gets the translated category for a given severity.
+ * @param severity - The severity score
+ * @param t - The translation function from i18next
+ * @returns The translated severity category
+ */
+export const getTranslatedSeverity = (severity: string | number | null, t: (key: string) => string): string => {
+    const numSeverity = typeof severity === 'string' ? parseFloat(severity) : severity;
+    const info = getSeverityInfo(numSeverity);
+
+    const keyMap: Record<string, string> = {
+        'None': 'none',
+        'Low': 'low',
+        'Medium': 'medium',
+        'High': 'high',
+        'Critical': 'critical',
+        'Unknown': 'unknown'
+    };
+
+    // Check keyMap; fallback to raw category name if translation fails
+    const key = keyMap[info.category];
+    return key ? t(`components.severityBadge.${key}`) : info.category;
+};

@@ -249,7 +249,6 @@ def upgrade() -> None:
         sa.Column('id', sa.UUID(), nullable=False),
         sa.Column('user_id', GUID(), nullable=False),
         sa.Column('notification_type_id', sa.Integer(), nullable=False),
-        sa.Column('title', sa.String(length=200), nullable=False),
         sa.Column('message', sa.Text(), nullable=False),
         sa.Column('related_entity_id', sa.UUID(), nullable=True),
         sa.Column('is_read', sa.Boolean(), nullable=False),

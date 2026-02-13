@@ -369,5 +369,23 @@
             "critical": "Crítica",
             "unknown": "Desconocida"
         }
+    },
+    "notifications": {
+        "comment_added": {
+            "title": "Nuevo comentario en tu reporte",
+            "message": "{{commenter_name}} comentó en el reporte '{{report_title}}'"
+        },
+        "report_created": {
+            "title": "Nuevo reporte enviado",
+            "message": "El hacker {{hacker_name}} envió un nuevo reporte a tu organización."
+        },
+        "status_changed": {
+            "title": "Estado del reporte actualizado",
+            "message": "El estado de tu reporte ha cambiado de {{old_status}} a {{new_status}}."
+        },
+        "severity_changed": {
+            "title": "Severidad del reporte actualizada",
+            "message": "La severidad de tu reporte ha cambiado de {{old_severity}} a {{new_severity}}."
+        }
     }
 }

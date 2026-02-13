@@ -369,5 +369,23 @@
             "critical": "Critical",
             "unknown": "Unknown"
         }
+    },
+    "notifications": {
+        "comment_added": {
+            "title": "New Comment on Your Report",
+            "message": "{{commenter_name}} commented on report '{{report_title}}'"
+        },
+        "report_created": {
+            "title": "New Report Submitted",
+            "message": "Hacker {{hacker_name}} submitted a new report to your organization."
+        },
+        "status_changed": {
+            "title": "Report Status Updated",
+            "message": "The status of your report has changed from {{old_status}} to {{new_status}}."
+        },
+        "severity_changed": {
+            "title": "Report Severity Updated",
+            "message": "The severity of your report has changed from {{old_severity}} to {{new_severity}}."
+        }
     }
 }

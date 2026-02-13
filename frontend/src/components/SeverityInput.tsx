@@ -1,7 +1,7 @@
 // frontend/src/components/SeverityInput.tsx
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getSeverityInfo } from '../utils/severityHelper';
+import { getSeverityInfo, getTranslatedSeverity } from '../utils/severityHelper';
 
 interface SeverityInputProps {
     currentSeverity: number | null;
@@ -42,7 +42,7 @@ const SeverityInput: React.FC<SeverityInputProps> = ({
                 <span
                     className={`px-2.5 py-1 text-xs font-semibold rounded-full ${severityInfo.color}`}
                 >
-                    {severityInfo.category} ({currentSeverity ? currentSeverity.toFixed(1) : '0.0'})
+                    {getTranslatedSeverity(currentSeverity || 0, t)} ({currentSeverity ? currentSeverity.toFixed(1) : '0.0'})
                 </span>
                 <button
                     onClick={toggleOpen}
@@ -61,7 +61,7 @@ const SeverityInput: React.FC<SeverityInputProps> = ({
             </div>
 
             {isOpen && (
-                <div className="absolute top-full left-0 mt-1 w-42 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                <div className="absolute top-full left-0 mt-1 w-max min-w-min bg-white border border-gray-200 rounded-md shadow-lg z-10">
                     <div className="py-0.5">
                         <div className="px-3 py-1">
                             <div className="flex items-center space-x-2">
@@ -89,9 +89,9 @@ const SeverityInput: React.FC<SeverityInputProps> = ({
                                     disabled={isUpdating}
                                 />
                             </div>
-                            <div className="text-xs text-gray-600 mt-2 mb-1">
+                            <div className="text-xs text-gray-600 mt-2 mb-1 whitespace-nowrap">
                                 {t('components.severityInput.selected')} <span className={`px-2 py-1 rounded-full ${selectedSeverityInfo.color}`}>
-                                    {selectedSeverityInfo.category} ({(parseFloat(selectedSeverity) || 0).toFixed(1)})
+                                    {getTranslatedSeverity(parseFloat(selectedSeverity) || 0, t)} ({(parseFloat(selectedSeverity) || 0).toFixed(1)})
                                 </span>
                             </div>
                         </div>

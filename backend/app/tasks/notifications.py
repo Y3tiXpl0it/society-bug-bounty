@@ -105,7 +105,7 @@ def send_websocket_notification(self, notification_id: str):
             event = NotificationEvent(
                 id=str(notification.id),
                 user_id=str(notification.user_id),
-                title=notification.title,
+                title=type_name,
                 message=notification.message,
                 # Safely access severity (defaults to 'info' if column is missing)
                 severity=getattr(notification, 'severity', 'info'),
@@ -298,34 +298,57 @@ def process_and_send_email_task(self, user_id: str, email_data: dict, notificati
                 logger.info(f"📧 User {user_id} has no details, proceeding with email (default True)")
                 
             # 3. Send Email
-            # We can call the other task directly or just call the logic.
-            # Calling the task adds another layer of Celery overhead/retries usually not needed 
-            # if we are already in a task, but for consistency we can use the helper function logic.
-            # However, `send_email_notification_task` uses `asyncio.run` which might conflict if we were async.
-            # But we are in a sync task here.
-            
-            # Use the existing task logic by calling it synchronously or effectively inlining it
-            # To keep it simple and reuse the retry logic of the *sending* part, we can just call the 
-            # `send_email_notification_task` *implementation* (not via delay) if we want, 
-            # OR just duplicate the tiny sending logic.
-            
-            # Reusing the existing task via .apply() is synchronous but effective.
-            # preventing double logging/retries might be better by just calling the async logic directly here.
             import asyncio
+            import json
             from app.src.notifications.email import send_email
+            from app.src.notifications.i18n import translate_for_email
             
             email_to = user.email
-            subject = email_data.get('subject')
-            template_name = email_data.get('template_name')
-            template_body = email_data.get('template_body')
+            
+            # Extract raw data from the task payload
+            payload_body = email_data.get('template_body', {})
+            notif_type = payload_body.get('notification_type')
+            message_raw = payload_body.get('message', '')
+            
+            # Parse JSON params
+            params = {}
+            if message_raw:
+                try:
+                    params = json.loads(message_raw)
+                except Exception:
+                    # Fallback for legacy plain text or malformed JSON
+                    logger.warning(f"📧 Could not parse JSON message for user {user_id}. Using raw text.")
+            
+            # Determine language (Global default)
+            lang = settings.VITE_DEFAULT_LANGUAGE
+            
+            # Perform translations using the new type-derived logic
+            if notif_type:
+                # Resolve subject/title from type
+                final_subject = translate_for_email(notif_type, 'title', params=params, lang=lang)
+                final_title = final_subject
+                final_message = translate_for_email(notif_type, 'message', params=params, lang=lang)
+            else:
+                # Legacy fallback if type is missing
+                final_subject = email_data.get('subject', 'Notification')
+                final_title = payload_body.get('title', final_subject)
+                final_message = message_raw
+            
+            # Update template body with translated strings
+            final_template_body = {
+                "title": final_title,
+                "message": final_message
+            }
+            
+            template_name = email_data.get('template_name', 'notification.html')
             
             loop = asyncio.get_event_loop()
             if loop.is_closed():
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
             
-            loop.run_until_complete(send_email(email_to, subject, template_name, template_body))
-            logger.info(f"📧 Email processed and sent to {email_to}")
+            loop.run_until_complete(send_email(email_to, final_subject, template_name, final_template_body))
+            logger.info(f"📧 Email processed and sent to {email_to} in language {lang}")
             
         finally:
             session.close()

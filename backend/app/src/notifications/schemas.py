@@ -8,7 +8,6 @@ from app.src.notifications.models import NotificationRoleEnum, NotificationTypeE
 
 class NotificationBase(BaseModel):
     """Base schema for notifications."""
-    title: Annotated[str, Field(min_length=1, max_length=200)]
     message: Annotated[str, Field(min_length=1, max_length=5000)]
     related_entity_id: Optional[uuid.UUID] = None
 

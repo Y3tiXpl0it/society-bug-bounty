@@ -1,5 +1,6 @@
 import uuid
 import logging
+import json
 from typing import List, Optional, Union, Dict, cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -69,7 +70,6 @@ class NotificationService:
                 # Dispatch to background task which handles fetching and checking preferences
                 await self._dispatch_email_notification(
                     notification_data.user_id,
-                    notification_data.title,
                     notification_data.message,
                     notification_data.notification_type,
                     notification_id=notification_id
@@ -86,7 +86,6 @@ class NotificationService:
             new_notification = Notification(
                 user_id=notification_data.user_id,
                 notification_type_id=type_id,
-                title=notification_data.title,
                 message=notification_data.message,
                 recipient_role=notification_data.recipient_role,
                 related_entity_id=notification_data.related_entity_id
@@ -130,7 +129,6 @@ class NotificationService:
     async def _dispatch_email_notification(
         self, 
         user_id: uuid.UUID, 
-        title: str, 
         message: str, 
         type_enum: NotificationTypeEnum,
         notification_id: Optional[Union[uuid.UUID, str]] = None
@@ -149,12 +147,11 @@ class NotificationService:
         # The task will handle fetching the user, checking preferences, and sending the email.
         
         email_data = {
-            "subject": title,
+            "subject": type_enum.value, # Use type name as fallback subject
             "template_name": "notification.html",
             "template_body": {
-                "title": title,
-                "message": message
-                # "action_url": "..." 
+                "message": message, # JSON params
+                "notification_type": type_enum.value
             }
         }
         
@@ -225,14 +222,18 @@ class NotificationService:
                 final_role = NotificationRoleEnum.HACKER
 
         # 3. Payload Construction (HERE we define the recipient for Celery)
-        title = "New Comment on Your Report"
-        message = f"{commenter_name} commented on report '{report_title}'."
+        # We store the type name in 'title' as a fallback/identifier
+        # and all variable data in 'message' as JSON.
+        notif_type = NotificationTypeEnum.comment_added.value
+        message_json = json.dumps({
+            "commenter_name": commenter_name,
+            "report_title": report_title
+        })
 
         data = NotificationCreate(
             user_id=recipient.id,
-            title=title,
-            message=message,
-            notification_type=NotificationTypeEnum.comment_added.value,
+            message=message_json,
+            notification_type=notif_type,
             recipient_role=final_role,
             related_entity_id=report_id
         )
@@ -263,11 +264,11 @@ class NotificationService:
                 continue
 
             # Create notification
+            notif_type = NotificationTypeEnum.report_created.value
             data = NotificationCreate(
                 user_id=member.id, # <--- Recipient
-                title="New Report Submitted",
-                message="A new report has been submitted to your organization.",
-                notification_type=NotificationTypeEnum.report_created.value,
+                message=json.dumps({"hacker_name": hacker.details.username if hacker.details else "Unknown"}),
+                notification_type=notif_type,
                 recipient_role=NotificationRoleEnum.ORG_MEMBER,
                 related_entity_id=report_id
             )
@@ -287,11 +288,11 @@ class NotificationService:
         if not hacker.details or not hacker.details.in_app_notifications_enabled:
             return None
 
+        notif_type = NotificationTypeEnum.status_changed.value
         data = NotificationCreate(
             user_id=hacker.id,
-            title="Report Status Updated",
-            message=f"{old_status}|{new_status}",
-            notification_type=NotificationTypeEnum.status_changed.value,
+            message=json.dumps({"old_status": old_status, "new_status": new_status}),
+            notification_type=notif_type,
             recipient_role=NotificationRoleEnum.HACKER,
             related_entity_id=report_id
         )
@@ -311,11 +312,11 @@ class NotificationService:
         if not recipient.details or not recipient.details.in_app_notifications_enabled:
             return None
 
+        notif_type = NotificationTypeEnum.status_changed.value
         data = NotificationCreate(
             user_id=recipient.id,
-            title="Report Status Updated",
-            message=f"{old_status}|{new_status}",
-            notification_type=NotificationTypeEnum.status_changed.value,
+            message=json.dumps({"old_status": old_status, "new_status": new_status, "report_title": report_title}),
+            notification_type=notif_type,
             recipient_role=NotificationRoleEnum.ORG_MEMBER,
             related_entity_id=report_id
         )
@@ -333,11 +334,11 @@ class NotificationService:
         if not hacker.details or not hacker.details.in_app_notifications_enabled:
             return None
 
+        notif_type = NotificationTypeEnum.severity_changed.value
         data = NotificationCreate(
             user_id=hacker.id,
-            title="Report Severity Updated",
-            message=f"{old_severity}|{new_severity}",
-            notification_type=NotificationTypeEnum.severity_changed.value,
+            message=json.dumps({"old_severity": old_severity, "new_severity": new_severity}),
+            notification_type=notif_type,
             recipient_role=NotificationRoleEnum.HACKER,
             related_entity_id=report_id
         )
@@ -357,11 +358,12 @@ class NotificationService:
         if not recipient.details or not recipient.details.in_app_notifications_enabled:
             return None
             
+        notif_type = NotificationTypeEnum.severity_changed.value
         data = NotificationCreate(
             user_id=recipient.id,
-            title="Report Severity Updated",
-            message=f"{old_severity}|{new_severity}",
-            notification_type=NotificationTypeEnum.severity_changed.value,
+            title=notif_type,
+            message=json.dumps({"old_severity": old_severity, "new_severity": new_severity, "report_title": report_title}),
+            notification_type=notif_type,
             recipient_role=NotificationRoleEnum.ORG_MEMBER,
             related_entity_id=report_id
         )
