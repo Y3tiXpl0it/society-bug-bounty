@@ -207,22 +207,33 @@ const CustomMarkdownEditor: React.FC<MarkdownEditorProps> = ({
                     {files.length > 0 && (
                         <div className="mt-4">
                             <h4 className="text-color-primary font-semibold mb-2">{t('components.markdownEditor.attachedFiles')}</h4>
-                            <div className="space-y-2">
+                            <div className="flex flex-wrap gap-2">
                                 {/* Map over files to display each */}
                                 {files.map((file: File, index: number) => (
                                     <div
                                         key={`${file.name}-${index}`}
-                                        className="flex justify-between items-center py-1 px-2 bg-gray-50 border border-gray-300 rounded"
+                                        className="group flex items-center px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-sm hover:bg-white hover:border-indigo-300 hover:shadow-sm transition-all duration-200"
                                     >
-                                        {/* Display sanitized filename */}
-                                        <span className="text-sm text-color-primary">
+                                        {/* Clip icon */}
+                                        <svg className="w-4 h-4 mr-2 text-gray-400 group-hover:text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                        </svg>
+
+                                        {/* File name */}
+                                        <span className="text-gray-700 font-medium group-hover:text-indigo-600 truncate max-w-[200px]" title={file.name}>
                                             {sanitizeFilename(file.name)}
                                         </span>
+
+                                        {/* File size */}
+                                        <span className="ml-2 text-xs text-gray-400 font-normal">
+                                            {(file.size / 1024).toFixed(1)} KB
+                                        </span>
+
                                         {/* Remove button */}
                                         <button
                                             type="button"
                                             onClick={() => handleFileRemove(index)} // Remove file
-                                            className="text-red-500 hover:text-red-700 p-1 cursor-pointer"
+                                            className="ml-2 text-gray-400 hover:text-red-500 transition-colors p-0.5 cursor-pointer"
                                             title={t('components.markdownEditor.removeFile')}
                                         >
                                             {/* Trash icon */}
