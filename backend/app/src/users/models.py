@@ -90,6 +90,9 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False) #type: ignore
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False) #type: ignore
 
+    # Flag for temporary/guest accounts (no Google OAuth, single-report lifecycle)
+    is_temporary: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False) #type: ignore
+
     # --- Timestamps for tracking user activity ---
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now(), onupdate=func.now(), nullable=False)

@@ -67,7 +67,11 @@
         "USER_USERNAME_RESERVED": "Username is reserved and cannot be used.",
         "USER_PROFILE_INFO_TOO_LONG": "Profile info must be at most {{max_length}} characters long.",
         "SELECT_AT_LEAST_ONE_ASSET": "Please select at least one asset.",
-        "INVALID_FILE_TYPE_OR_NAME": "Invalid file type or name too long. Allowed: images (JPEG, PNG, GIF) with names up to 255 characters."
+        "INVALID_FILE_TYPE_OR_NAME": "Invalid file type or name too long. Allowed: images (JPEG, PNG, GIF) with names up to 255 characters.",
+        "GUEST_ACTION_FORBIDDEN": "This action requires a full account.",
+        "GUEST_REPORT_LIMIT": "Guest accounts can only submit one report.",
+        "GUEST_LOGIN_FAILED": "Invalid username or password.",
+        "CAPTCHA_FAILED": "CAPTCHA verification failed. Please try again."
     },
     "programs": {
         "title": "Programs",
@@ -81,10 +85,29 @@
         "welcomeBack": "Welcome Back",
         "subtitle": "Sign in to access the Bug Bounty Platform",
         "signInGoogle": "Sign in with Google",
+        "temporaryAccountNotice": "This is a temporary account. Profile details cannot be modified.",
         "messages": {
             "success": "Welcome back!",
             "error": "Failed to log in.",
-            "googleError": "Could not connect to Google Login."
+            "googleError": "Could not connect to Google Login.",
+            "guestSuccess": "Guest account created! Save your credentials.",
+            "guestLoginSuccess": "Welcome back!"
+        },
+        "or": "or",
+        "continueAsGuest": "Continue as Guest",
+        "guestLogin": "Guest Login",
+        "guestLoginSubtitle": "Log in with your guest credentials",
+        "usernamePlaceholder": "Username",
+        "passwordPlaceholder": "Password",
+        "loginButton": "Log In",
+        "backToLogin": "Back to login",
+        "guestCredentials": {
+            "title": "Save your credentials!",
+            "warning": "These will only be shown once. Save them securely.",
+            "username": "Username",
+            "password": "Password",
+            "copied": "Copied!",
+            "continue": "I have saved my credentials"
         }
     },
     "createProgram": {

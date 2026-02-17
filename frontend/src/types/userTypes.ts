@@ -18,6 +18,7 @@ export interface AuthUser {
     id: string;
     email: string;
     is_superuser: boolean;
+    is_temporary: boolean;
     details: UserDetails | null; // User profile details are nested here.
     organizations: Organization[]; // A list of the user's organizations.
 }

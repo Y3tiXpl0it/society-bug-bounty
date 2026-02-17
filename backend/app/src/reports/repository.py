@@ -1,7 +1,7 @@
 # backend/app/src/reports/repository.py
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import select, func as sa_func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
@@ -16,6 +16,13 @@ from app.src.organizations.models import Organization
 class ReportRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
+
+    async def count_reports_by_hacker(self, hacker_id: uuid.UUID) -> int:
+        """Counts how many reports a hacker has submitted."""
+        result = await self.session.execute(
+            select(sa_func.count()).select_from(Report).where(Report.hacker_id == hacker_id)
+        )
+        return result.scalar_one()
 
     async def create(self, report_data: ReportCreate, asset_ids: list[uuid.UUID] | None = None) -> Report:
         """Creates a new report in the database."""

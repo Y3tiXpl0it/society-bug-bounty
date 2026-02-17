@@ -14,6 +14,7 @@ from app.src.users.manager import fastapi_users_instance
 from app.src.users.models import User
 from app.src.programs.models import Program
 from app.core.exceptions import ForbiddenException, NotFoundException
+from app.core.error_codes import ErrorCode
 from app.src.organizations.repository import OrganizationRepository
 from app.src.programs.repository import ProgramRepository
 from app.src.reports.repository import ReportRepository
@@ -27,6 +28,18 @@ get_current_active_user = fastapi_users_instance.current_user(active=True)
 get_current_user_optional = fastapi_users_instance.current_user(active=True, optional=True)
 
 
+async def require_permanent_user(
+    user: User = Depends(get_current_active_user)
+) -> User:
+    """Rejects temporary/guest users from accessing this endpoint."""
+    if user.is_temporary:
+        raise ForbiddenException(detail={
+            "code": ErrorCode.GUEST_ACTION_FORBIDDEN,
+            "message": "This action requires a full account"
+        })
+    return user
+
+
 def get_connection_manager(request: Request):
     """
     Dependency to get the WebSocket connection manager from app state.
@@ -37,8 +50,14 @@ def get_connection_manager(request: Request):
 
 async def organization_member_only(user: User = Depends(get_current_active_user)) -> User:
     """
-    A dependency that ensures the current user is a member of at least one organization.
+    A dependency that ensures the current user is a permanent account
+    and a member of at least one organization.
     """
+    if user.is_temporary:
+        raise ForbiddenException(detail={
+            "code": ErrorCode.GUEST_ACTION_FORBIDDEN,
+            "message": "This action requires a full account"
+        })
     # The 'user.organizations' relationship will be an empty list if they are not a member.
     if not user.organizations:
         raise ForbiddenException("Access requires organization membership.")

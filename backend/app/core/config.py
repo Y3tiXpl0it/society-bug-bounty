@@ -79,6 +79,9 @@ class Settings(BaseSettings):
     # Global default language from environment variable (vía Vite .env)
     VITE_DEFAULT_LANGUAGE: str = "en"
 
+    # --- Cloudflare Turnstile (CAPTCHA) ---
+    TURNSTILE_SECRET_KEY: str
+
     # --- CORS Settings ---
     CORS_ALLOWED_ORIGINS: str = "http://localhost,http://127.0.0.1,http://localhost:8000"
 

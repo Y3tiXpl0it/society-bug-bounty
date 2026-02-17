@@ -67,7 +67,11 @@
         "USER_USERNAME_RESERVED": "Este nombre de usuario está reservado y no se puede utilizar.",
         "USER_PROFILE_INFO_TOO_LONG": "La información del perfil no puede tener más de {{max_length}} caracteres.",
         "SELECT_AT_LEAST_ONE_ASSET": "Por favor selecciona al menos un activo.",
-        "INVALID_FILE_TYPE_OR_NAME": "Tipo de archivo inválido o nombre demasiado largo. Permitido: imágenes (JPEG, PNG, GIF) con nombres de hasta 255 caracteres."
+        "INVALID_FILE_TYPE_OR_NAME": "Tipo de archivo inválido o nombre demasiado largo. Permitido: imágenes (JPEG, PNG, GIF) con nombres de hasta 255 caracteres.",
+        "GUEST_ACTION_FORBIDDEN": "Esta acción requiere una cuenta completa.",
+        "GUEST_REPORT_LIMIT": "Las cuentas de invitado solo pueden enviar un reporte.",
+        "GUEST_LOGIN_FAILED": "Usuario o contraseña inválidos.",
+        "CAPTCHA_FAILED": "Verificación CAPTCHA fallida. Por favor intenta de nuevo."
     },
     "programs": {
         "title": "Programas",
@@ -81,10 +85,29 @@
         "welcomeBack": "Bienvenido de nuevo",
         "subtitle": "Inicia sesión para acceder a la plataforma de Bug Bounty",
         "signInGoogle": "Iniciar sesión con Google",
+        "temporaryAccountNotice": "Esta es una cuenta temporal. Los detalles del perfil no pueden ser modificados.",
         "messages": {
             "success": "¡Bienvenido de nuevo!",
             "error": "Error al iniciar sesión.",
-            "googleError": "No se pudo conectar con Google Login."
+            "googleError": "No se pudo conectar con Google Login.",
+            "guestSuccess": "¡Cuenta de invitado creada! Guarda tus credenciales.",
+            "guestLoginSuccess": "¡Bienvenido de nuevo!"
+        },
+        "or": "o",
+        "continueAsGuest": "Continuar como Invitado",
+        "guestLogin": "Acceso de Invitado",
+        "guestLoginSubtitle": "Inicia sesión con tus credenciales de invitado",
+        "usernamePlaceholder": "Nombre de usuario",
+        "passwordPlaceholder": "Contraseña",
+        "loginButton": "Iniciar Sesión",
+        "backToLogin": "Volver al inicio de sesión",
+        "guestCredentials": {
+            "title": "¡Guarda tus credenciales!",
+            "warning": "Solo se mostrarán una vez. Guárdalas de forma segura.",
+            "username": "Usuario",
+            "password": "Contraseña",
+            "copied": "¡Copiado!",
+            "continue": "He guardado mis credenciales"
         }
     },
     "createProgram": {

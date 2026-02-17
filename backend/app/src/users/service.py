@@ -18,7 +18,7 @@ from app.utils.image_upload_service import ImageUploadService
 from app.src.users.manager import UserManager
 from app.src.users.google_oauth_service import GoogleOAuthService
 from app.src.users.schemas import UserCreate
-from app.src.users.models import User, OAuthAccount
+from app.src.users.models import User, OAuthAccount, UserDetails
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -58,6 +58,55 @@ class UserService:
         )
         # Add .unique() here as well for consistency and to prevent potential issues.
         return result.unique().scalar_one_or_none()
+
+    async def get_user_by_username(self, username: str) -> User | None:
+        """Fetches a user by their username (via UserDetails join)."""
+        from sqlalchemy import func
+        result = await self.session.execute(
+            select(User)
+            .join(UserDetails, User.id == UserDetails.user_id)
+            .where(func.lower(UserDetails.username) == username.lower())
+        )
+        return result.unique().scalar_one_or_none()
+
+    async def create_guest_user(self, user_manager: UserManager) -> tuple[User, str]:
+        """
+        Creates a temporary guest user.
+        Returns (user, plain_password) so the password can be shown once to the hacker.
+        """
+        # Generate random password
+        plain_password = secrets.token_urlsafe(12)
+
+        # Generate placeholder email that the user never sees
+        placeholder_email = f"guest-{uuid.uuid4().hex[:12]}@sbb.temporary"
+
+        try:
+            # Create user via fastapi-users manager (handles hashing, on_after_register hook)
+            user_create = UserCreate(email=placeholder_email, password=plain_password, is_active=True)
+            created_user = await user_manager.create(user_create)
+
+            # Re-fetch within our session (user_manager uses its own session)
+            user = await self.get_user_by_id(created_user.id)
+            if not user:
+                raise Exception("Failed to fetch newly created guest user")
+
+            # Mark as temporary
+            user.is_temporary = True
+            await self.session.commit()
+            await self.session.refresh(user)
+
+            return user, plain_password
+
+        except BadRequestException:
+            raise
+        except Exception as e:
+            logger.error(f"Error creating guest user: {e}")
+            await self.session.rollback()
+            raise BadRequestException(detail={
+                "code": ErrorCode.GUEST_LOGIN_FAILED,
+                "message": "Error creating guest account",
+                "params": {"error": str(e)}
+            })
 
     async def update_user_details(self, user_id: uuid.UUID, details_update: dict) -> User:
         """Updates the user details for a given user ID."""
@@ -224,7 +273,7 @@ class UserService:
 
         if not user:
             # --- REGISTER NEW USER ---
-            password = secrets.token_urlsafe(12)
+            password = secrets.token_urlsafe(20)
             try:
                 # Create base user
                 user_create = UserCreate(email=email, password=password, is_active=True)

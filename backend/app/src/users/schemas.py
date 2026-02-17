@@ -90,6 +90,7 @@ class UserRead(schemas.BaseUser[uuid.UUID]):
     It inherits base fields from fastapi-users and includes the nested user details.
     """
     is_superuser: bool = False
+    is_temporary: bool = False
     details: Optional[UserDetailsReadSchema] = None
 
 class UserReadWithOrgs(UserRead):

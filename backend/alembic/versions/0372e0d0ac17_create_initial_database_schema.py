@@ -32,6 +32,7 @@ def upgrade() -> None:
         sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
         sa.Column('last_login', sa.DateTime(timezone=True), nullable=True),
         sa.Column('is_superuser', sa.Boolean(), nullable=False),
+        sa.Column('is_temporary', sa.Boolean(), server_default=sa.false(), nullable=False),
         sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)

@@ -80,11 +80,41 @@ const logout = async (accessToken: string | null): Promise<void> => {
     }
 };
 
+/**
+ * Creates a new guest account (with Turnstile CAPTCHA verification)
+ */
+const createGuestAccount = async (turnstileToken: string): Promise<{
+    access_token: string;
+    guest_credentials: { username: string; password: string };
+    user: AuthUser;
+}> => {
+    const response = await apiFetch('/auth/guest', null, {
+        method: 'POST',
+        data: { turnstile_token: turnstileToken },
+        withCredentials: true,
+    });
+    return response.data;
+};
+
+/**
+ * Logs in a guest user with username and password
+ */
+const guestLogin = async (username: string, password: string): Promise<{ access_token: string; user: AuthUser }> => {
+    const response = await apiFetch('/auth/guest/login', null, {
+        method: 'POST',
+        data: { username, password },
+        withCredentials: true,
+    });
+    return response.data;
+};
+
 const authService = {
     getGoogleAuthUrl,
     exchangeOAuthCode,
     refreshAccessToken,
     logout,
+    createGuestAccount,
+    guestLogin,
 };
 
 export default authService;

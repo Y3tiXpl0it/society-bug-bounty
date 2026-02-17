@@ -13,6 +13,9 @@ from app.src.reports.schemas import ReportCreate, ReportCreateRequest, ReportCom
 from app.src.reports.models import ReportStatus
 from app.src.users.models import User
 from typing import Optional
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
 from app.src.notifications.service import NotificationService
 from app.src.websockets.connection_manager import ConnectionManager
 from app.src.attachments.service import AttachmentService
@@ -34,6 +37,15 @@ class ReportService:
         Assigns the program_id and hacker_id from the authenticated user.
         Validates and associates assets.
         """
+        # Block temp users from submitting more than one report
+        if hacker.is_temporary:
+            existing_count = await self.repository.count_reports_by_hacker(hacker.id)
+            if existing_count >= 1:
+                raise ForbiddenException(detail={
+                    "code": ErrorCode.GUEST_REPORT_LIMIT,
+                    "message": "Guest accounts can only submit one report"
+                })
+
         # Validate that provided asset_ids belong to the program
         if report_data.asset_ids:
             valid_assets = await self.repository.get_program_assets(program_id)
@@ -195,6 +207,14 @@ class ReportService:
 
         # Notify organization members about status change
         await self._notify_organization_members_on_status_change(report, old_status, status.value, user, use_celery=True)
+
+        # Deactivate guest account on terminal status
+        TERMINAL_STATUSES = {ReportStatus.resolved, ReportStatus.rejected,
+                             ReportStatus.duplicate, ReportStatus.out_of_scope}
+        if status in TERMINAL_STATUSES and report.hacker and report.hacker.is_temporary:
+            report.hacker.is_active = False
+            await self.repository.session.commit()
+            logger.info(f"🔒 Deactivated guest account {report.hacker.id} — report {report_id} reached terminal status '{status.value}'")
 
         return report
 
