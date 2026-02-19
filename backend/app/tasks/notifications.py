@@ -131,7 +131,7 @@ def send_websocket_notification(self, notification_id: str):
             mgr = socketio.RedisManager(redis_url, write_only=True)
             
             room = f"user_{notification.user_id}"
-            logger.info(f"📡 Broadcasting to room: {room}")
+            logger.debug(f"📡 Broadcasting to room: {room}")
             
             mgr.emit(
                 'notification',
@@ -273,7 +273,7 @@ def process_and_send_email_task(self, user_id: str, email_data: dict, notificati
             if notification_id:
                 notif = session.get(Notification, notification_id)
                 if notif and notif.is_read:
-                    logger.info(f"📧 Smart Check: Skipping email for user {user_id} (Notification {notification_id} already read)")
+                    logger.debug(f"📧 Smart Check: Skipping email for user {user_id} (Notification {notification_id} already read)")
                     return
 
             # 1. Fetch User with preferences
@@ -287,15 +287,19 @@ def process_and_send_email_task(self, user_id: str, email_data: dict, notificati
             if not user or not user.email:
                 logger.warning(f"📧 Skipping email for user {user_id}: User not found or no email")
                 return
+
+            if user.is_temporary:
+                logger.debug(f"📧 Skipping email for user {user_id}: User is temporary")
+                return
             
             # 2. Check Preferences
             if user.details:
                 if not user.details.email_notifications_enabled:
-                    logger.info(f"📧 Skipping email for user {user_id}: Email notifications disabled")
+                    logger.debug(f"📧 Skipping email for user {user_id}: Email notifications disabled")
                     return
             else:
                 # Default to True if no details found
-                logger.info(f"📧 User {user_id} has no details, proceeding with email (default True)")
+                logger.debug(f"📧 User {user_id} has no details, proceeding with email (default True)")
                 
             # 3. Send Email
             import asyncio

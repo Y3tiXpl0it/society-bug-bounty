@@ -1,6 +1,6 @@
 # backend/app/src/reports/routes.py
 import uuid
-from fastapi import APIRouter, Depends, Form, File, UploadFile, Request
+from fastapi import APIRouter, Depends, Form, File, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import attributes
 from app.core.config import settings
@@ -231,7 +231,6 @@ async def get_comment_attachments(
 
 @router.get("/{report_id}/attachments/{attachment_id}/download")
 async def download_report_attachment(
-    request: Request,
     report_id: uuid.UUID,
     attachment_id: uuid.UUID,
     report_user: tuple[Report, User] = Depends(get_authorized_report),
@@ -242,17 +241,6 @@ async def download_report_attachment(
 
     Requires authentication and authorization (hacker or org member), and that the attachment belongs to the report.
     """
-    # Log request details for debugging
-    import logging
-    logger = logging.getLogger(__name__)
-    auth_header = request.headers.get("authorization")
-    logger.info(f"Download request for report {report_id}, attachment {attachment_id}")
-    logger.info(f"Auth header present: {bool(auth_header)}")
-    if auth_header:
-        logger.info(f"Auth header starts with: {auth_header[:20]}...")
-    else:
-        logger.warning("No auth header in download request - likely direct browser fetch")
-
     report, user = report_user
 
     service = AttachmentService(session)
@@ -273,7 +261,6 @@ async def download_report_attachment(
 
 @router.get("/{report_id}/comments/{comment_id}/attachments/{attachment_id}/download")
 async def download_comment_attachment(
-    request: Request,
     report_id: uuid.UUID,
     comment_id: uuid.UUID,
     attachment_id: uuid.UUID,
@@ -285,17 +272,6 @@ async def download_comment_attachment(
 
     Requires authentication and authorization (hacker or org member), and that the attachment belongs to the comment.
     """
-    # Log request details for debugging
-    import logging
-    logger = logging.getLogger(__name__)
-    auth_header = request.headers.get("authorization")
-    logger.info(f"Download request for report {report_id}, comment {comment_id}, attachment {attachment_id}")
-    logger.info(f"Auth header present: {bool(auth_header)}")
-    if auth_header:
-        logger.info(f"Auth header starts with: {auth_header[:20]}...")
-    else:
-        logger.warning("No auth header in download request - likely direct browser fetch")
-
     report, user = report_user
 
     service = AttachmentService(session)

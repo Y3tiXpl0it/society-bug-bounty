@@ -223,7 +223,7 @@ class RefreshTokenService:
         await self.session.commit()
         await self.session.refresh(new_token_record)
         
-        self.logger.info(
+        self.logger.debug(
             f"Rotated refresh token for user {user.id}. "
             f"Old token revoked, new token created."
         )

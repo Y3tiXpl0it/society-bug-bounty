@@ -22,7 +22,7 @@ def setup_websocket_events(sio: socketio.AsyncServer, connection_manager: Connec
         Handle WebSocket connection event.
         Authenticates the user using JWT token from auth.
         """
-        logger.info(f"⚡ WebSocket connect request: {sid}")
+        logger.debug(f"⚡ WebSocket connect request: {sid}")
         try:
             # 1. Attempt to extract token from the 'auth' payload
             token = auth.get('token') if auth else None
@@ -58,7 +58,7 @@ def setup_websocket_events(sio: socketio.AsyncServer, connection_manager: Connec
         """
         Handle WebSocket disconnection event.
         """
-        logger.info(f"🔌 WebSocket disconnected: {sid}")
+        logger.debug(f"🔌 WebSocket disconnected: {sid}")
         await connection_manager.disconnect_user(sid)
         
     async def handle_ping(sid: str):

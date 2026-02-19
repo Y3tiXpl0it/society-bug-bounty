@@ -88,7 +88,7 @@ class ConnectionManager:
             if not user.is_active:
                 raise ConnectionRefusedError("User is inactive")
             
-            self.logger.info(f"✅ WebSocket User Authenticated: {user.email}")
+            self.logger.debug(f"✅ WebSocket User Authenticated: {user.email}")
             
             return user
 
@@ -107,7 +107,7 @@ class ConnectionManager:
             user: Authenticated user
         """
         user_id = str(user.id)
-        self.logger.info(f"🔗 Connecting user {user_id} (session {sid}) to room user_{user_id}")
+        self.logger.debug(f"🔗 Connecting user {user_id} (session {sid}) to room user_{user_id}")
 
         # Initialize user connections set if not exists
         if user_id not in self.active_connections:
@@ -118,7 +118,7 @@ class ConnectionManager:
 
         # Join user to their personal room
         await self.sio.enter_room(sid, f"user_{user_id}")
-        self.logger.info(f"✅ User {user_id} connected. Active connections: {self.active_connections}")
+        self.logger.debug(f"✅ User {user_id} connected. Active connections: {self.active_connections}")
 
     async def disconnect_user(self, sid: str) -> None:
         """
@@ -151,9 +151,7 @@ class ConnectionManager:
             notification_data: Notification data to send
         """
         try:
-            self.logger.info(f"📡 Broadcasting notification to user {user_id}, room: user_{user_id}")
-            self.logger.info(f"📡 Notification data: {notification_data}")
-            self.logger.info(f"📡 Active connections for user: {self.active_connections.get(user_id, set())}")
+            self.logger.debug(f"📡 Broadcasting notification to user {user_id}, room: user_{user_id}")
 
             # Create notification event
             event = NotificationEvent(
@@ -175,7 +173,7 @@ class ConnectionManager:
                 timestamp=event.created_at
             )
 
-            self.logger.info(f"📡 WebSocket message: {message.model_dump()}")
+
 
             # Send to user's room (this automatically broadcasts to all user sessions)
             await self.sio.emit(
@@ -184,7 +182,7 @@ class ConnectionManager:
                 room=f"user_{user_id}"
             )
 
-            self.logger.info(f"✅ WebSocket emit completed for user {user_id}")
+
 
         except Exception as e:
             self.logger.error(f"❌ Error broadcasting notification to user {user_id}: {e}")
