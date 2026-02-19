@@ -3,19 +3,28 @@ import axios from 'axios';
 
 /**
  * Extracts a user-readable error message from any type of error.
+ *
+ * Returns null for structured backend errors ({ detail: { code, message } })
+ * because apiClient already showed the translated toast for those.
  */
-export const getErrorMessage = (error: unknown): string => {
+export const getErrorMessage = (error: unknown): string | null => {
     if (axios.isAxiosError(error)) {
-        // Priority: detail (FastAPI usually uses this) -> message -> status text
         const data = error.response?.data;
-        
+
         if (data && typeof data === 'object') {
-            if ('detail' in data) return String(data.detail);
+            if ('detail' in data) {
+                const detail = data.detail;
+                // Structured error: apiClient already handled it.
+                if (detail && typeof detail === 'object' && 'code' in detail) {
+                    return null;
+                }
+                // Plain-string detail
+                if (typeof detail === 'string') return detail;
+            }
             if ('message' in data) return String(data.message);
-            // If the backend returns a validation errors object (e.g.: { email: "invalid" })
-            if ('errors' in data) return Object.values(data.errors).join(', ');
+            if ('errors' in data) return Object.values(data.errors as Record<string, string>).join(', ');
         }
-        
+
         return error.message || 'A network error occurred.';
     }
 

@@ -1,15 +1,9 @@
 // frontend/src/services/authService.ts
 
-import { apiFetch } from '../utils/apiClient';
+import { apiFetch, refreshAccessToken } from '../utils/apiClient';
 import type { AuthUser } from '../types/userTypes';
 
-// Helper to get cookie value by name
-function getCookie(name: string): string | null {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
-    return null;
-}
+
 
 // Gets Google OAuth authorization URL
 const getGoogleAuthUrl = async (): Promise<string> => {
@@ -35,35 +29,6 @@ const exchangeOAuthCode = async (code: string): Promise<{ access_token: string; 
     return response.data;
 };
 
-/**
- * Refreshes access token using refresh token cookie
- */
-const refreshAccessToken = async (): Promise<string | null> => {
-    const csrfToken = getCookie('XSRF-TOKEN');
-
-    if (!csrfToken) {
-        return null;
-    }
-
-    try {
-        const response = await apiFetch('/auth/refresh', null, {
-            method: 'POST',
-            withCredentials: true,
-            headers: {
-                'X-XSRF-TOKEN': csrfToken,
-            },
-        });
-
-        if (response.status >= 200 && response.status < 300) {
-            return response.data.access_token;
-        }
-
-        return null;
-    } catch (error) {
-        console.error('Token refresh failed:', error);
-        return null;
-    }
-};
 
 /**
  * Logs out by revoking refresh token

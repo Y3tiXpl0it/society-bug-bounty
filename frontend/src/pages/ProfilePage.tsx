@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { AsyncContent } from '../components/AsyncContent';
 import Avatar from 'boring-avatars';
+import { showErrorToast } from '../utils/errorHandler';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -69,8 +70,7 @@ const ProfilePage: React.FC = () => {
         },
         onError: (error: any) => {
             console.error('Error uploading avatar:', error);
-            const msg = error.response?.data?.detail || t('profile.messages.avatarError');
-            toast.error(msg);
+            showErrorToast(error, t('profile.messages.avatarError'));
             setPreviewUrl(null);
             // Modal stays open so user can retry or cancel manually
         }
@@ -91,8 +91,7 @@ const ProfilePage: React.FC = () => {
         },
         onError: (error: any) => {
             console.error('Error updating profile:', error);
-            const msg = error.response?.data?.detail || t('profile.messages.profileError');
-            toast.error(msg);
+            showErrorToast(error, t('profile.messages.profileError'));
             // Modal stays open
         }
     });

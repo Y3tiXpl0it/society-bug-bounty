@@ -59,7 +59,7 @@ const instance = axios.create({
 });
 
 // --- Token Refresh Logic ---
-async function refreshAccessToken(): Promise<string | null> {
+export async function refreshAccessToken(): Promise<string | null> {
     const csrfToken = getCookie('XSRF-TOKEN');
 
     if (!csrfToken) {

@@ -116,6 +116,8 @@ services:
                 VITE_API_BASE_URL: ${VITE_API_BASE_URL}
                 VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID}
                 VITE_GOOGLE_REDIRECT_URI: ${VITE_GOOGLE_REDIRECT_URI}
+                VITE_TURNSTILE_SITE_KEY: ${VITE_TURNSTILE_SITE_KEY}
+                VITE_DEFAULT_LANGUAGE: ${VITE_DEFAULT_LANGUAGE}
         container_name: frontend_prod
         restart: unless-stopped
         # Code volumes and dev commands are removed as the image contains the built assets

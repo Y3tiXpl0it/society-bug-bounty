@@ -1,4 +1,4 @@
-# backend/app/cli/manage_users.py
+# backend/app/cli/manage_organizations.py
 import asyncio
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
@@ -20,11 +20,25 @@ from app.core.exceptions import NotFoundException, AlreadyExistsException, BadRe
 # Creates the main Typer application for the command-line interface.
 app = typer.Typer()
 
+
+def _format_error(detail) -> str:
+    """
+    Extracts a human-readable message from an exception's detail field.
+    After the error-code refactoring, detail is a dict like:
+        {'code': ErrorCode.SOME_CODE, 'message': '...', 'params': {...}}
+    This helper returns the 'message' value when available, or falls back
+    to a plain string representation for legacy / unexpected shapes.
+    """
+    if isinstance(detail, dict):
+        return detail.get("message") or str(detail)
+    return str(detail)
+
+
 @asynccontextmanager
 async def get_deps() -> AsyncGenerator[OrganizationService, None]:
     """
     Manually initializes and yields dependencies for use in a CLI context.
-    
+
     This context manager replicates the dependency injection that FastAPI handles
     automatically for HTTP requests. It builds the required service layer
     by constructing its dependencies (session, database adapter, user manager)
@@ -32,17 +46,17 @@ async def get_deps() -> AsyncGenerator[OrganizationService, None]:
     """
     session_generator = get_session()
     session: AsyncSession = await anext(session_generator)
-    
+
     try:
         # 1. Create the user database adapter.
         user_db = SQLAlchemyUserDatabase(session, User, OAuthAccount)
-        
+
         # 2. Create the custom user manager.
         user_manager = UserManager(user_db)
-        
+
         # 3. Create the organization service, injecting the session and user manager.
         org_service = OrganizationService(session, user_manager)
-        
+
         # 4. Yield the fully constructed service for the command to use.
         yield org_service
     finally:
@@ -59,13 +73,12 @@ def create_org(name: str = typer.Option(..., "--name", "-n"), logo_url: str = ty
     async def _create_org():
         async with get_deps() as org_service:
             try:
-                # The business logic is now fully contained within the service layer.
                 new_org = await org_service.create_organization(name=name, logo_url=logo_url)
                 typer.echo(f"✅ Organization '{new_org.name}' created successfully")
                 typer.echo(f"   ID: {new_org.id}")
                 typer.echo(f"   Slug: {new_org.slug}")
             except (AlreadyExistsException, BadRequestException) as e:
-                typer.echo(f"❌ Error: {e.detail}")
+                typer.echo(f"❌ Error: {_format_error(e.detail)}")
                 raise typer.Exit(code=1)
     asyncio.run(_create_org())
 
@@ -79,7 +92,7 @@ def add_user(email: str = typer.Option(..., "--email", "-e"), org_slug: str = ty
                 await org_service.add_user_to_organization(email, org_slug)
                 typer.echo(f"✅ User '{email}' added to organization '{org_slug}' successfully")
             except NotFoundException as e:
-                typer.echo(f"❌ Error: {e.detail}")
+                typer.echo(f"❌ Error: {_format_error(e.detail)}")
                 raise typer.Exit(code=1)
     asyncio.run(_add_user())
 
@@ -93,7 +106,7 @@ def remove_user(email: str = typer.Option(..., "--email", "-e"), org_slug: str =
                 await org_service.remove_user_from_organization(email, org_slug)
                 typer.echo(f"✅ User '{email}' removed from organization '{org_slug}' successfully")
             except NotFoundException as e:
-                typer.echo(f"❌ Error: {e.detail}")
+                typer.echo(f"❌ Error: {_format_error(e.detail)}")
                 raise typer.Exit(code=1)
     asyncio.run(_remove_user())
 
@@ -102,12 +115,12 @@ def remove_user(email: str = typer.Option(..., "--email", "-e"), org_slug: str =
 def update_logo(
     org_slug: str = typer.Option(..., "--org", "-o", help="Slug of the organization to update"),
     file_path: Path = typer.Option(
-        ..., 
-        "--file", "-f", 
+        ...,
+        "--file", "-f",
         help="Local path to the image file (e.g., ./logos/my-logo.png)",
-        exists=True, 
-        file_okay=True, 
-        dir_okay=False, 
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
         readable=True
     )
 ):
@@ -121,26 +134,27 @@ def update_logo(
                 # 1. Read the bytes from the local file
                 with open(file_path, "rb") as f:
                     file_content = f.read()
-                
+
                 # 2. Create an in-memory byte buffer (simulating an open file)
                 file_object = io.BytesIO(file_content)
-                
+
                 # 3. Construct the UploadFile object expected by the service.
-                # It is CRITICAL to pass the correct 'filename' so the service can validate the extension (.jpg, .png, etc.)
+                # It is CRITICAL to pass the correct 'filename' so the service
+                # can validate the extension (.jpg, .png, etc.)
                 upload_file = UploadFile(file=file_object, filename=file_path.name)
-                
+
                 typer.echo(f"🔄 Processing image '{file_path.name}' for organization '{org_slug}'...")
-                
-                # 4. Call the existing service method
+
+                # 4. Call the existing service method.
                 # This handles validation, deletion of old files, saving to disk, and DB updates.
                 updated_org = await org_service.upload_logo(org_slug, upload_file)
-                
+
                 typer.echo(f"✅ Logo updated successfully.")
                 typer.echo(f"   Organization: {updated_org.name}")
                 typer.echo(f"   New URL: {updated_org.logo_url}")
 
             except NotFoundException as e:
-                typer.echo(f"❌ Error: {e.detail}")
+                typer.echo(f"❌ Error: {_format_error(e.detail)}")
                 raise typer.Exit(code=1)
             except Exception as e:
                 # Catch image validation errors (size, format) or IO errors

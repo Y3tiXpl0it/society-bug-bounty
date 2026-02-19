@@ -10,6 +10,7 @@ import ProgramForm from '../components/ProgramForm';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { AsyncContent } from '../components/AsyncContent';
 import type { ProgramCreateData, ProgramBulkUpdateData } from '../types/programTypes';
+import { showErrorToast } from '../utils/errorHandler';
 
 /**
  * Renders the page for creating a new bug bounty program.
@@ -57,8 +58,7 @@ const CreateProgramPage: React.FC = () => {
             navigate('/programs');
         },
         onError: (error: any) => {
-            const msg = error?.response?.data?.message || t('createProgram.error');
-            toast.error(msg);
+            showErrorToast(error, t('createProgram.error'));
         }
     });
 

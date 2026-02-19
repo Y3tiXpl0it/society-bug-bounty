@@ -13,6 +13,7 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import { apiPatch } from '../utils/apiClient';
 import imageUploadService from '../utils/imageUploadService';
 import { replaceDataUrlsInMarkdown } from '../utils/markdownUtils';
+import { showErrorToast } from '../utils/errorHandler';
 
 /**
  * Renders the page for submitting a new vulnerability report.
@@ -128,9 +129,7 @@ const ReportSubmitPage: React.FC = () => {
             navigate(`/programs/${orgSlug}/${progSlug}`);
         },
         onError: (err: any) => {
-            // Keep modal open so user can try again or see the error
-            const msg = err?.response?.data?.detail || err?.message || t('reportSubmit.error');
-            toast.error(msg);
+            showErrorToast(err, t('reportSubmit.error'));
         }
     });
 

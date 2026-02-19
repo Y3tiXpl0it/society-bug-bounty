@@ -10,6 +10,7 @@ import ProgramForm from '../components/ProgramForm';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { AsyncContent } from '../components/AsyncContent';
 import { type ProgramBulkUpdateData } from '../types/programTypes';
+import { showErrorToast } from '../utils/errorHandler';
 
 /**
  * Renders the page for editing an existing bug bounty program.
@@ -57,8 +58,7 @@ const EditProgramPage: React.FC = () => {
             queryClient.invalidateQueries({ queryKey: ['programs'] });
         },
         onError: (err: any) => {
-            const msg = err?.response?.data?.detail || err?.message || t('editProgram.errorUpdate');
-            toast.error(msg);
+            showErrorToast(err, t('editProgram.errorUpdate'));
         }
     });
 
@@ -83,9 +83,7 @@ const EditProgramPage: React.FC = () => {
             navigate('/programs');
         },
         onError: (err: any) => {
-            // Keep modal open so user can see error and retry
-            const msg = err?.response?.data?.detail || err?.message || t('editProgram.errorDelete');
-            toast.error(msg);
+            showErrorToast(err, t('editProgram.errorDelete'));
         }
     });
 

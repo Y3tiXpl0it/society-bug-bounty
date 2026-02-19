@@ -69,7 +69,7 @@
         "SELECT_AT_LEAST_ONE_ASSET": "Por favor selecciona al menos un activo.",
         "INVALID_FILE_TYPE_OR_NAME": "Tipo de archivo inválido o nombre demasiado largo. Permitido: imágenes (JPEG, PNG, GIF) con nombres de hasta 255 caracteres.",
         "GUEST_ACTION_FORBIDDEN": "Esta acción requiere una cuenta completa.",
-        "GUEST_REPORT_LIMIT": "Las cuentas de invitado solo pueden enviar un reporte.",
+        "GUEST_REPORT_LIMIT": "Ya has enviado un reporte. Las cuentas de invitado solo pueden enviar un reporte.",
         "GUEST_LOGIN_FAILED": "Usuario o contraseña inválidos.",
         "CAPTCHA_FAILED": "Verificación CAPTCHA fallida. Por favor intenta de nuevo."
     },
@@ -108,6 +108,14 @@
             "password": "Contraseña",
             "copied": "¡Copiado!",
             "continue": "He guardado mis credenciales"
+        },
+        "modals": {
+            "guestConfirm": {
+                "title": "Confirmar Cuenta de Invitado",
+                "message": "Estás a punto de crear una cuenta temporal de invitado. Esta cuenta solo existirá durante la vida de un reporte.\n\nSe te proporcionará un nombre de usuario y contraseña generados.\n\n¿Deseas continuar?",
+                "confirm": "Sí, continuar",
+                "cancel": "Cancelar"
+            }
         }
     },
     "createProgram": {

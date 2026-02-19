@@ -19,7 +19,7 @@ export const useAsync = <T, E = Error, args extends any[] = any[]>(
     const execute = useCallback(async (...args: args) => {
         setLoading(true);
         setError(null);
-        
+
         try {
             const result = await asyncFunction(...args);
             setData(result);
@@ -30,11 +30,11 @@ export const useAsync = <T, E = Error, args extends any[] = any[]>(
             setError(errorObj);
 
             const message = getErrorMessage(err);
-            
-            if (options.showToastError !== false) {
+
+            if (options.showToastError !== false && message !== null) {
                 toast.error(message);
             }
-            
+
             if (options.onError) options.onError(errorObj);
             return null;
         } finally {

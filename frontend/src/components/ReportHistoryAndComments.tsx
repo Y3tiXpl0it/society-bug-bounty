@@ -155,7 +155,7 @@ const ReportHistoryAndComments: React.FC<ReportHistoryAndCommentsProps> = ({
         } catch (error) {
             console.error('Failed to submit comment:', error);
             const message = getErrorMessage(error);
-            toast.error(message);
+            if (message !== null) toast.error(message);
         } finally {
             setIsSubmittingComment(false);
             setPendingFormData(null);

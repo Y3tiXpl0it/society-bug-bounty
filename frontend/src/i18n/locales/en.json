@@ -69,7 +69,7 @@
         "SELECT_AT_LEAST_ONE_ASSET": "Please select at least one asset.",
         "INVALID_FILE_TYPE_OR_NAME": "Invalid file type or name too long. Allowed: images (JPEG, PNG, GIF) with names up to 255 characters.",
         "GUEST_ACTION_FORBIDDEN": "This action requires a full account.",
-        "GUEST_REPORT_LIMIT": "Guest accounts can only submit one report.",
+        "GUEST_REPORT_LIMIT": "You have already submitted a report. Guest accounts can only submit one report.",
         "GUEST_LOGIN_FAILED": "Invalid username or password.",
         "CAPTCHA_FAILED": "CAPTCHA verification failed. Please try again."
     },
@@ -108,6 +108,14 @@
             "password": "Password",
             "copied": "Copied!",
             "continue": "I have saved my credentials"
+        },
+        "modals": {
+            "guestConfirm": {
+                "title": "Confirm Guest Account",
+                "message": "You are about to create a temporary guest account. This account will only exist for the lifetime of a single report.\n\nYou will be provided with a generated username and password.\n\nDo you wish to continue?",
+                "confirm": "Yes, continue",
+                "cancel": "Cancel"
+            }
         }
     },
     "createProgram": {

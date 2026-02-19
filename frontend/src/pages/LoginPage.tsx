@@ -8,6 +8,8 @@ import { useAuth } from '../hooks/useAuth';
 import { AsyncContent } from '../components/AsyncContent';
 import authService from '../services/authService';
 import userService from '../services/userService';
+import ConfirmationModal from '../components/ConfirmationModal';
+import { showErrorToast } from '../utils/errorHandler';
 
 // Turnstile global type
 declare global {
@@ -39,6 +41,7 @@ const LoginPage: React.FC = () => {
     const [guestUsername, setGuestUsername] = useState('');
     const [guestPassword, setGuestPassword] = useState('');
     const [copiedField, setCopiedField] = useState<string | null>(null);
+    const [showGuestModal, setShowGuestModal] = useState(false);
 
     // Turnstile
     const turnstileRef = useRef<HTMLDivElement>(null);
@@ -99,8 +102,7 @@ const LoginPage: React.FC = () => {
         },
         onError: (err: any) => {
             console.error("Login failed", err);
-            const msg = err?.response?.data?.detail || t('login.messages.error');
-            toast.error(msg);
+            showErrorToast(err, t('login.messages.error'));
         }
     });
 
@@ -114,6 +116,7 @@ const LoginPage: React.FC = () => {
         onSuccess: (data) => {
             setGuestCredentials(data.guest_credentials);
             setView('guestCredentials');
+            setShowGuestModal(false);
             toast.success(t('login.messages.guestSuccess'));
         },
         onError: (err: any) => {
@@ -170,6 +173,12 @@ const LoginPage: React.FC = () => {
     });
 
     const handleContinueAsGuest = () => {
+        if (turnstileToken) {
+            setShowGuestModal(true);
+        }
+    };
+
+    const confirmGuestCreation = () => {
         if (turnstileToken) {
             createGuest(turnstileToken);
         }
@@ -409,6 +418,17 @@ const LoginPage: React.FC = () => {
                         </button>
                     </>
                 )}
+                {/* --- Confirmation Modal for Guest Account --- */}
+                <ConfirmationModal
+                    isOpen={showGuestModal}
+                    title={t('login.modals.guestConfirm.title')}
+                    message={t('login.modals.guestConfirm.message')}
+                    confirmText={t('login.modals.guestConfirm.confirm')}
+                    cancelText={t('login.modals.guestConfirm.cancel')}
+                    onConfirm={confirmGuestCreation}
+                    onCancel={() => setShowGuestModal(false)}
+                    isLoading={isCreatingGuest}
+                />
             </div>
         </div>
     );
