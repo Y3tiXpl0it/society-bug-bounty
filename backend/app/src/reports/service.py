@@ -178,12 +178,9 @@ class ReportService:
         current_report = await self.get_report_by_id(report_id)
         old_status = current_report.status.value
 
-        report = await self.repository.update(report_id, {"status": status})
-        if not report:
-            raise NotFoundException(detail={
-                "code": ErrorCode.REPORT_NOT_FOUND,
-                "message": "Report not found"
-            })
+        current_report.status = status
+        await self.repository.session.flush()
+        report = current_report
             
         # Update user stats for leaderboard
         from app.src.users.service import UserService
@@ -234,12 +231,9 @@ class ReportService:
         current_report = await self.get_report_by_id(report_id)
         old_severity = str(current_report.severity)
 
-        report = await self.repository.update(report_id, {"severity": severity})
-        if not report:
-            raise NotFoundException(detail={
-                "code": ErrorCode.REPORT_NOT_FOUND,
-                "message": "Report not found"
-            })
+        current_report.severity = severity
+        await self.repository.session.flush()
+        report = current_report
             
         # Update user stats for leaderboard
         from app.src.users.service import UserService

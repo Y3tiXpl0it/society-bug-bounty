@@ -345,7 +345,15 @@ class UserService:
         stats = result.scalar_one_or_none()
         
         if not stats:
-            stats = UserStats(user_id=user_id)
+            stats = UserStats(
+                user_id=user_id,
+                total_score=0.0,
+                total_reports=0,
+                critical_bugs=0,
+                high_bugs=0,
+                medium_bugs=0,
+                low_bugs=0
+            )
             self.session.add(stats)
 
         def determine_bucket(sev: float) -> str:
