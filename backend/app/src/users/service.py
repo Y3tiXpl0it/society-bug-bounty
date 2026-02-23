@@ -313,3 +313,130 @@ class UserService:
             pass
 
         return user
+
+    async def update_stats_for_report_change(
+        self,
+        user_id: uuid.UUID,
+        old_status: str,
+        new_status: str,
+        old_severity: float,
+        new_severity: float
+    ) -> None:
+        """
+        Updates the UserStats table based on changes to a report.
+        Handles both status changes and severity changes.
+        """
+        from app.src.users.models import UserStats
+        
+        # Consider successful statuses
+        success_statuses = {"accepted", "resolved"}
+        
+        was_successful = old_status in success_statuses
+        is_successful = new_status in success_statuses
+
+        # If it wasn't successful before and it still isn't, no stats change needed.
+        if not was_successful and not is_successful:
+            return
+
+        # Fetch or create UserStats
+        result = await self.session.execute(
+            select(UserStats).filter_by(user_id=user_id)
+        )
+        stats = result.scalar_one_or_none()
+        
+        if not stats:
+            stats = UserStats(user_id=user_id)
+            self.session.add(stats)
+
+        def determine_bucket(sev: float) -> str:
+            if sev >= 9.0: return "critical_bugs"
+            if sev >= 7.0: return "high_bugs"
+            if sev >= 4.0: return "medium_bugs"
+            return "low_bugs"
+
+        old_bucket = determine_bucket(old_severity)
+        new_bucket = determine_bucket(new_severity)
+
+        # Case 1: Transition TO successful (Newly accepted/resolved)
+        if not was_successful and is_successful:
+            stats.total_score += new_severity
+            stats.total_reports += 1
+            current = getattr(stats, new_bucket)
+            setattr(stats, new_bucket, current + 1)
+
+        # Case 2: Transition FROM successful (Reverted to in_review/rejected)
+        elif was_successful and not is_successful:
+            stats.total_score -= old_severity
+            stats.total_reports = max(0, stats.total_reports - 1)
+            old_current = getattr(stats, old_bucket)
+            setattr(stats, old_bucket, max(0, old_current - 1))
+
+        # Case 3: Retained successful status, but severity might have changed
+        elif was_successful and is_successful:
+            if old_severity != new_severity:
+                stats.total_score = stats.total_score - old_severity + new_severity
+                
+                # If the severity change moved it to a different bucket
+                if old_bucket != new_bucket:
+                    old_current = getattr(stats, old_bucket)
+                    setattr(stats, old_bucket, max(0, old_current - 1))
+                    
+                    new_current = getattr(stats, new_bucket)
+                    setattr(stats, new_bucket, new_current + 1)
+                    
+        await self.session.flush()
+
+    async def get_leaderboard(self, page: int, size: int) -> dict:
+        """
+        Fetches the paginated leaderboard data joined with user details.
+        """
+        from app.src.users.models import UserStats, UserDetails, User
+        from sqlalchemy import func
+
+        skip = (page - 1) * size
+
+        # Get total count (excluding temporary users)
+        result_total = await self.session.execute(
+            select(func.count(UserStats.user_id))
+            .join(User, UserStats.user_id == User.id)
+            .where(User.is_temporary == False)
+        )
+        total = result_total.scalar_one_or_none() or 0
+
+        # Get paginated data joined with user details (excluding temporary users)
+        stmt = (
+            select(UserStats, UserDetails.username, UserDetails.avatar_url)
+            .join(User, UserStats.user_id == User.id)
+            .join(UserDetails, User.id == UserDetails.user_id)
+            .where(User.is_temporary == False)
+            .order_by(UserStats.total_score.desc(), UserStats.total_reports.desc())
+            .offset(skip)
+            .limit(size)
+        )
+        
+        result = await self.session.execute(stmt)
+        rows = result.all()
+
+        items = []
+        for i, row in enumerate(rows):
+            stats, username, avatar_url = row
+            items.append({
+                "username": username,
+                "avatar_url": avatar_url,
+                "rank": skip + i + 1,
+                "total_score": round(stats.total_score, 2),
+                "total_reports": stats.total_reports,
+                "bug_breakdown": {
+                    "critical": stats.critical_bugs,
+                    "high": stats.high_bugs,
+                    "medium": stats.medium_bugs,
+                    "low": stats.low_bugs
+                }
+            })
+
+        return {
+            "items": items,
+            "total": total,
+            "page": page,
+            "size": size
+        }

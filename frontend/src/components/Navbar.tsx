@@ -143,6 +143,12 @@ const Navbar: React.FC = () => {
                             >
                                 {t('components.navbar.programs')}
                             </Link>
+                            <Link
+                                to="/leaderboard"
+                                className="text-gray-600 hover:text-indigo-700 px-3 py-2 rounded-md text-sm font-medium"
+                            >
+                                Leaderboard
+                            </Link>
                             {isLoggedIn && (
                                 <Link
                                     to="/my-reports"

@@ -115,3 +115,25 @@ class UserUpdate(schemas.BaseUserUpdate):
     fastapi-users schema, where all fields are optional.
     """
     pass
+
+# --- Schemas for Leaderboard ---
+
+class LeaderboardBugBreakdown(BaseModel):
+    critical: int
+    high: int
+    medium: int
+    low: int
+
+class LeaderboardEntry(BaseModel):
+    username: str
+    avatar_url: Optional[str] = None
+    rank: int
+    total_score: float
+    total_reports: int
+    bug_breakdown: LeaderboardBugBreakdown
+
+class LeaderboardResponse(BaseModel):
+    items: list[LeaderboardEntry]
+    total: int
+    page: int
+    size: int

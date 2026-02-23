@@ -184,6 +184,16 @@ class ReportService:
                 "code": ErrorCode.REPORT_NOT_FOUND,
                 "message": "Report not found"
             })
+            
+        # Update user stats for leaderboard
+        from app.src.users.service import UserService
+        await UserService(self.repository.session).update_stats_for_report_change(
+            user_id=report.hacker_id,
+            old_status=old_status,
+            new_status=status.value,
+            old_severity=float(current_report.severity),
+            new_severity=float(current_report.severity)  # severity hasn't changed
+        )
 
         # Create status change event
         await self.repository.create_event(
@@ -230,6 +240,16 @@ class ReportService:
                 "code": ErrorCode.REPORT_NOT_FOUND,
                 "message": "Report not found"
             })
+            
+        # Update user stats for leaderboard
+        from app.src.users.service import UserService
+        await UserService(self.repository.session).update_stats_for_report_change(
+            user_id=report.hacker_id,
+            old_status=current_report.status.value,  # status hasn't changed
+            new_status=current_report.status.value,
+            old_severity=float(old_severity),
+            new_severity=float(severity)
+        )
 
         # Create severity change event
         await self.repository.create_event(

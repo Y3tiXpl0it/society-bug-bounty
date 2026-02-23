@@ -15,6 +15,7 @@ import ReportDetailPage from './pages/ReportDetailPage';
 import BugBountyListPage from './pages/BugBountyListPage';
 import MyReportsPage from './pages/MyReportsPage';
 import ProfilePage from './pages/ProfilePage';
+import LeaderboardPage from './pages/LeaderboardPage';
 
 function App() {
     return (
@@ -31,6 +32,8 @@ function App() {
                         <Route path="/my-reports" element={<MyReportsPage />} />
 
                         <Route path="/profile" element={<ProfilePage />} />
+
+                        <Route path="/leaderboard" element={<LeaderboardPage />} />
 
                         <Route path="/login" element={<LoginPage />} />
 

@@ -12,6 +12,7 @@ from sqlalchemy import (
     String,
     DateTime,
     Integer,
+    Float,
     func,
     JSON
 )
@@ -121,6 +122,10 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
     report_events: Mapped[list["ReportEvent"]] = relationship("ReportEvent", back_populates="user")
     notifications: Mapped[list["Notification"]] = relationship("Notification", back_populates="user")
     
+    # One-to-one relationship with user stats for the leaderboard.
+    stats: Mapped["UserStats"] = relationship(back_populates="user", cascade="all, delete-orphan", uselist=False, lazy="joined")
+
+    
     # Relationship with refresh tokens
     refresh_tokens: Mapped[list["RefreshToken"]] = relationship(
         "RefreshToken",
@@ -158,6 +163,29 @@ class UserDetails(Base):
 
     # --- Relationship back to the User model ---
     user: Mapped["User"] = relationship(back_populates="details")
+
+
+class UserStats(Base):
+    """
+    Stores pre-calculated statistics for a user, used for the Leaderboard.
+    """
+    __tablename__ = "user_stats"
+    
+    # Primary key is the user_id, establishing a one-to-one relationship.
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="cascade"), primary_key=True)
+    
+    # Total score based on report severity (useful for quick leaderboard sorting)
+    total_score: Mapped[float] = mapped_column(Float, default=0.0, index=True, nullable=False)
+    total_reports: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    
+    # Bug types broken down by severity
+    critical_bugs: Mapped[int] = mapped_column(Integer, default=0, nullable=False) # CVSS 9.0 - 10.0
+    high_bugs: Mapped[int] = mapped_column(Integer, default=0, nullable=False)     # CVSS 7.0 - 8.9
+    medium_bugs: Mapped[int] = mapped_column(Integer, default=0, nullable=False)   # CVSS 4.0 - 6.9
+    low_bugs: Mapped[int] = mapped_column(Integer, default=0, nullable=False)      # CVSS 0.1 - 3.9
+
+    # --- Relationship back to the User model ---
+    user: Mapped["User"] = relationship(back_populates="stats")
 
 
 class RefreshToken(Base):

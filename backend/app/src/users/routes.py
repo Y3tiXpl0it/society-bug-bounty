@@ -28,7 +28,7 @@ from app.src.users.auth import (
 )
 from app.src.users.refresh_token_service import RefreshTokenService
 from app.src.users.service import UserService
-from app.src.users.schemas import UserDetailsReadSchema, UserDetailsUpdateSchema
+from app.src.users.schemas import UserDetailsReadSchema, UserDetailsUpdateSchema, LeaderboardResponse
 from app.src.users.models import User
 
 logger = get_logger(__name__)
@@ -392,3 +392,19 @@ async def upload_avatar(
     avatar_url = await service.upload_avatar(user.id, file)
     
     return {"avatar_url": avatar_url}
+
+@user_router.get("/leaderboard", response_model=LeaderboardResponse, tags=["users"])
+async def get_leaderboard(
+    page: int = 1,
+    size: int = 20,
+    service: UserService = Depends(get_user_service),
+):
+    """
+    Get the top hackers leaderboard.
+    """
+    if page < 1:
+        page = 1
+    if size < 1 or size > 100:
+        size = 20
+        
+    return await service.get_leaderboard(page, size)
