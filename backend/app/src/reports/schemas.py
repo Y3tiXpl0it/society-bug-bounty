@@ -37,10 +37,10 @@ class ReportCreateRequest(BaseModel):
     @field_validator('severity')
     @classmethod
     def validate_severity_range(cls, v: float) -> float:
-        if not (0 <= v <= 10):
+        if not (0 < v <= 10):
             raise PydanticCustomError(
                 ErrorCode.REPORT_SEVERITY_RANGE,
-                'Severity must be between 0 and 10'
+                'Severity must be between 0.1 and 10'
             )
         return v
 

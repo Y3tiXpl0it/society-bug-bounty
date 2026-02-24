@@ -203,6 +203,9 @@ class ReportService:
 
         await self.repository.session.commit()
 
+        # Refresh the report object to avoid MissingGreenlet errors during notification or response serialization
+        report = await self.repository.get_by_id(report_id)
+
         # Create notification for status change - notify hacker
         await self.notification_service.create_status_change_notification(
             report_id=report_id,
@@ -221,6 +224,7 @@ class ReportService:
         if status in TERMINAL_STATUSES and report.hacker and report.hacker.is_temporary:
             report.hacker.is_active = False
             await self.repository.session.commit()
+            report = await self.repository.get_by_id(report_id)
             logger.info(f"🔒 Deactivated guest account {report.hacker.id} — report {report_id} reached terminal status '{status.value}'")
 
         return report
@@ -255,6 +259,9 @@ class ReportService:
         )
 
         await self.repository.session.commit()
+
+        # Refresh the report object to avoid MissingGreenlet errors during notification or response serialization
+        report = await self.repository.get_by_id(report_id)
 
         # Create notification for severity change - notify hacker
         await self.notification_service.create_severity_change_notification(

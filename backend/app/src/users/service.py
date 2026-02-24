@@ -308,8 +308,6 @@ class UserService:
                     "params": {"error": str(e)}
                 })
         else:
-            # --- EXISTING USER ---
-            # Logic to update existing user tokens could go here
             pass
 
         return user
@@ -331,10 +329,10 @@ class UserService:
         # Consider successful statuses
         success_statuses = {"accepted", "resolved"}
         
-        was_successful = old_status in success_statuses
-        is_successful = new_status in success_statuses
+        was_successful = (old_status in success_statuses) and (old_severity > 0.0)
+        is_successful = (new_status in success_statuses) and (new_severity > 0.0)
 
-        # If it wasn't successful before and it still isn't, no stats change needed.
+        # If it wasn't successful before and it still isn't (or both are 0.0), no stats change needed.
         if not was_successful and not is_successful:
             return
 
@@ -365,21 +363,22 @@ class UserService:
         old_bucket = determine_bucket(old_severity)
         new_bucket = determine_bucket(new_severity)
 
-        # Case 1: Transition TO successful (Newly accepted/resolved)
+        # Case 1: Transition TO successful (Newly accepted/resolved AND severity > 0.0)
+        # (This also covers transitioning from a 0.0 report to a > 0.0 report)
         if not was_successful and is_successful:
             stats.total_score += new_severity
             stats.total_reports += 1
             current = getattr(stats, new_bucket)
             setattr(stats, new_bucket, current + 1)
 
-        # Case 2: Transition FROM successful (Reverted to in_review/rejected)
+        # Case 2: Transition FROM successful (Reverted to in_review/rejected OR severity dropped to 0.0)
         elif was_successful and not is_successful:
             stats.total_score -= old_severity
             stats.total_reports = max(0, stats.total_reports - 1)
             old_current = getattr(stats, old_bucket)
             setattr(stats, old_bucket, max(0, old_current - 1))
 
-        # Case 3: Retained successful status, but severity might have changed
+        # Case 3: Retained successful status, but severity changed (both > 0.0)
         elif was_successful and is_successful:
             if old_severity != new_severity:
                 stats.total_score = stats.total_score - old_severity + new_severity

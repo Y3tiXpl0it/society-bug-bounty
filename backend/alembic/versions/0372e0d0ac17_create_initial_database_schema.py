@@ -50,6 +50,19 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_user_details_username'), 'user_details', ['username'], unique=True)
 
+    op.create_table('user_stats',
+        sa.Column('user_id', sa.UUID(), nullable=False),
+        sa.Column('total_score', sa.Float(), nullable=False),
+        sa.Column('total_reports', sa.Integer(), nullable=False),
+        sa.Column('critical_bugs', sa.Integer(), nullable=False),
+        sa.Column('high_bugs', sa.Integer(), nullable=False),
+        sa.Column('medium_bugs', sa.Integer(), nullable=False),
+        sa.Column('low_bugs', sa.Integer(), nullable=False),
+        sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='cascade'),
+        sa.PrimaryKeyConstraint('user_id')
+    )
+    op.create_index(op.f('ix_user_stats_total_score'), 'user_stats', ['total_score'], unique=False)
+
     op.create_table('username_blocklist',
         sa.Column('id', sa.UUID(), nullable=False),
         sa.Column('username', sa.String(length=24), nullable=False),
@@ -318,6 +331,8 @@ def downgrade() -> None:
     op.drop_column('notifications', 'is_read')
     op.add_column('notifications', sa.Column('notification_type', sa.Enum('report_created', 'status_changed', 'severity_changed', 'comment_added', name='notification_type_enum'), autoincrement=False, nullable=False))
     op.drop_table('notification_types')
+    op.drop_index(op.f('ix_user_stats_total_score'), table_name='user_stats')
+    op.drop_table('user_stats')
     op.drop_table('user_details')
     op.drop_index(op.f('ix_users_email'), table_name='users')
     op.drop_table('users')

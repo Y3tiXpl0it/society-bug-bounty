@@ -32,7 +32,7 @@ const ReportSubmitForm: React.FC<ReportSubmitFormProps> = ({
             .min(100, t('errors.REPORT_DESCRIPTION_TOO_SHORT', { min_length: 100 }))
             .max(30000, t('errors.REPORT_DESCRIPTION_TOO_LONG', { max_length: 30000 })),
         severity: z.number()
-            .min(0, t('errors.REPORT_SEVERITY_RANGE')) // Assuming 0-10 range is standard explanation
+            .min(0.1, t('errors.REPORT_SEVERITY_MIN_CREATE')) // Hackers cannot submit 0.0
             .max(10, t('errors.REPORT_SEVERITY_RANGE')),
         asset_ids: z.array(z.string()).min(1, t('errors.SELECT_AT_LEAST_ONE_ASSET')),
         files: z.array(z.instanceof(File)).refine(
@@ -62,7 +62,7 @@ const ReportSubmitForm: React.FC<ReportSubmitFormProps> = ({
 [Explain the impact of the vulnerability. What could an attacker do?]
 
 # Attachments / Proof of Concept (PoC)`);
-    const [severity, setSeverity] = useState<string>('0');
+    const [severity, setSeverity] = useState<string>('0.1');
     const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([]);
     const [formError, setFormError] = useState<string | null>(null);
 
@@ -176,10 +176,10 @@ const ReportSubmitForm: React.FC<ReportSubmitFormProps> = ({
                         }}
                         className="w-full px-3 py-2 border border-gray-300 rounded text-color-primary focus:outline-none focus:border-indigo-500 focus:ring-indigo-500"
                         maxLength={120}
-                        min="0"
+                        min="0.1"
                         max="10"
                         step="0.1"
-                        placeholder="0.0 - 10.0"
+                        placeholder="0.1 - 10.0"
                         required
                     />
                     <p className="text-sm mt-1">
