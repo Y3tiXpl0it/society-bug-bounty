@@ -5,6 +5,7 @@ import leaderboardService from '../services/leaderboardService';
 import type { LeaderboardEntry } from '../types/leaderboardTypes';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
+import Avatar from 'boring-avatars';
 
 const LeaderboardPage: React.FC = () => {
     const { accessToken, setAccessToken } = useAuth();
@@ -72,13 +73,15 @@ const LeaderboardPage: React.FC = () => {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
+                                                    <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
                                                         {entry.avatar_url ? (
                                                             <img src={`${import.meta.env.VITE_API_BASE_URL}${entry.avatar_url}`} alt={entry.username} className="w-full h-full object-cover" />
                                                         ) : (
-                                                            <div className="w-full h-full flex flex-col items-center justify-center text-gray-500 text-sm font-bold bg-gray-200">
-                                                                {entry.username.charAt(0).toUpperCase()}
-                                                            </div>
+                                                            <Avatar
+                                                                size={40}
+                                                                name={entry.username}
+                                                                variant="bauhaus"
+                                                            />
                                                         )}
                                                     </div>
                                                     <span className="font-semibold text-gray-900">{entry.username}</span>
