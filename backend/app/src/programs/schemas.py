@@ -15,27 +15,6 @@ from app.core.error_codes import ErrorCode
 from pydantic_core import PydanticCustomError
 
 
-# --- REWARD SCHEMAS ---
-
-class RewardBase(BaseModel):
-    """Base schema for reward data, containing shared properties."""
-    severity: SeverityEnum
-    amount: Annotated[int, Field(ge=0, le=2147483647)]
-
-class RewardCreate(RewardBase):
-    """Schema used to validate the data for creating a new reward."""
-    pass
-
-class RewardUpdate(BaseModel):
-    """Schema for updating an existing reward's amount, identified by its severity."""
-    severity: SeverityEnum
-    amount: int
-
-class RewardRead(RewardBase):
-    """Schema for serializing and returning reward data in API responses."""
-    model_config = ConfigDict(from_attributes=True)
-    id: uuid.UUID
-
 
 # --- ASSET SCHEMAS ---
 
@@ -102,6 +81,11 @@ class ProgramBase(BaseModel):
     name: Annotated[str, Field(min_length=2, max_length=120)]
     description: str
     is_active: bool = True
+    
+    reward_critical: Annotated[int, Field(ge=0, le=2147483647)] = 0
+    reward_high: Annotated[int, Field(ge=0, le=2147483647)] = 0
+    reward_medium: Annotated[int, Field(ge=0, le=2147483647)] = 0
+    reward_low: Annotated[int, Field(ge=0, le=2147483647)] = 0
 
     @field_validator('name')
     @classmethod
@@ -129,10 +113,9 @@ class ProgramBase(BaseModel):
 class ProgramCreate(ProgramBase):
     """
     Schema for validating the request body when creating a new program.
-    It expects a list of assets and an optional list of rewards.
+    It expects a list of assets.
     """
     organization_id: uuid.UUID
-    rewards: Optional[list[RewardCreate]] = None
     assets: list[ProgramAssetCreate]
 
 class ProgramUpdate(BaseModel):
@@ -176,7 +159,7 @@ class ProgramBulkUpdate(BaseModel):
     program details, rewards, and assets in a single request. All fields are optional.
     """
     details: ProgramUpdate | None = None
-    rewards: list[RewardUpdate] | None = None
+    rewards: dict[str, int] | None = None
     assets: AssetsBulkUpdate | None = None
 
 class ProgramSummary(ProgramBase):
@@ -186,7 +169,6 @@ class ProgramSummary(ProgramBase):
     id: uuid.UUID
     slug: str
     organization_id: uuid.UUID
-    rewards: list[RewardRead]
     organization: OrganizationRead
     deleted_at: datetime | None = None
 
@@ -200,7 +182,6 @@ class ProgramDetail(ProgramBase):
     created_at: datetime
     updated_at: datetime
     deleted_at: datetime | None = None
-    rewards: list[RewardRead]
     assets: list[ProgramAssetRead]
     organization: OrganizationRead
 

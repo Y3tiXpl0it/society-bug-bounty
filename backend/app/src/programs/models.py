@@ -8,19 +8,11 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import (
-    Boolean,
-    Enum,
-    ForeignKey,
-    Integer,
-    String,
-    Text,
-    UniqueConstraint,
-    func,
-)
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql import func
 from sqlalchemy.sql.sqltypes import TIMESTAMP
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import Column, String, Text, Boolean, DateTime, Integer, Enum, ForeignKey, UniqueConstraint
+from sqlalchemy.dialects.postgresql import UUID
 
 from app.core.database import Base
 
@@ -33,7 +25,6 @@ if TYPE_CHECKING:
 
 # Import the association table to ensure it's registered
 from app.src.reports.models import report_assets
-
 
 class SeverityEnum(str, enum.Enum):
     """Enumeration for vulnerability severity levels."""
@@ -67,14 +58,15 @@ class Program(Base):
         TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
+    reward_critical: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    reward_high: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    reward_medium: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    reward_low: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
     # --- Relationships ---
     organization: Mapped["Organization"] = relationship("Organization", back_populates="programs")
 
     reports: Mapped[list["Report"]] = relationship("Report", back_populates="program")
-    rewards: Mapped[list["Reward"]] = relationship(
-        "Reward",
-        back_populates="program", cascade="all, delete-orphan"
-    )
     assets: Mapped[list["ProgramAsset"]] = relationship(
         "ProgramAsset",
         back_populates="program", cascade="all, delete-orphan"
@@ -85,23 +77,6 @@ class Program(Base):
         UniqueConstraint('organization_id', 'slug', name='uq_organization_program_slug'),
     )
 
-
-class Reward(Base):
-    """Represents a reward tier for a specific program and severity."""
-    __tablename__ = "rewards"
-
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    program_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("programs.id"))
-    
-    severity: Mapped[SeverityEnum] = mapped_column(
-        Enum(SeverityEnum, name="severity_enum"), nullable=False
-    )
-    amount: Mapped[int] = mapped_column(Integer, nullable=False)
-
-    # Relationship back to the parent Program object.
-    program: Mapped["Program"] = relationship("Program", back_populates="rewards")
 
 
 class ProgramAsset(Base):

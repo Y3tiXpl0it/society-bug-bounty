@@ -7,18 +7,9 @@ import AssetItem from './AssetItem';
 import { useAuth } from '../hooks/useAuth';
 import assetTypeService, { type AssetType } from '../services/assetTypeService';
 import { getAssetTypeDisplayName } from '../utils/assetTypeHelper';
-import { type Reward, type Asset, type NewAsset, type ProgramCreateData, type ProgramBulkUpdateData, type ProgramDetail } from '../types/programTypes';
+import { type Asset, type NewAsset, type ProgramCreateData, type ProgramBulkUpdateData, type ProgramDetail } from '../types/programTypes';
 
-/**
- * Defines the consistent display order for reward severity levels.
- * This prevents the UI from reordering them based on API response order.
- */
-const severityOrder: { [key in Reward['severity']]: number } = {
-    low: 1,
-    medium: 2,
-    high: 3,
-    critical: 4,
-};
+
 
 // --- Component Props ---
 interface ProgramFormProps {
@@ -67,7 +58,10 @@ const ProgramForm: React.FC<ProgramFormProps> = ({
     const [description, setDescription] = useState('');
     const [isActive, setIsActive] = useState(true);
     const [selectedOrgId, setSelectedOrgId] = useState<string>('');
-    const [rewards, setRewards] = useState<Reward[]>([]);
+    const [rewardCritical, setRewardCritical] = useState<number>(0);
+    const [rewardHigh, setRewardHigh] = useState<number>(0);
+    const [rewardMedium, setRewardMedium] = useState<number>(0);
+    const [rewardLow, setRewardLow] = useState<number>(0);
     /** State for assets that already exist in the database. */
     const [assets, setAssets] = useState<Asset[]>([]);
     /** State for new assets added by the user in the current session (not yet saved). */
@@ -95,10 +89,10 @@ const ProgramForm: React.FC<ProgramFormProps> = ({
             setName(initialData.name || '');
             setDescription(initialData.description || '');
             setIsActive(initialData.is_active !== undefined ? initialData.is_active : true);
-            const sortedRewards = (initialData.rewards || []).sort(
-                (a: Reward, b: Reward) => severityOrder[b.severity] - severityOrder[a.severity]
-            );
-            setRewards(sortedRewards);
+            setRewardCritical(initialData.reward_critical || 0);
+            setRewardHigh(initialData.reward_high || 0);
+            setRewardMedium(initialData.reward_medium || 0);
+            setRewardLow(initialData.reward_low || 0);
             setAssets(initialData.assets || []);
             setSelectedOrgId(initialData.organization_id || '');
         }
@@ -127,12 +121,10 @@ const ProgramForm: React.FC<ProgramFormProps> = ({
 - Avoid tests that could affect other users.
 - Do not access user data without authorization.`);
             // Set default rewards to 0
-            setRewards([
-                { severity: 'low', amount: 0 },
-                { severity: 'medium', amount: 0 },
-                { severity: 'high', amount: 0 },
-                { severity: 'critical', amount: 0 },
-            ]);
+            setRewardCritical(0);
+            setRewardHigh(0);
+            setRewardMedium(0);
+            setRewardLow(0);
         }
 
         // Fetch available asset types from the server
@@ -198,10 +190,13 @@ const ProgramForm: React.FC<ProgramFormProps> = ({
     };
 
     /** Updates the amount for a specific reward severity level. */
-    const handleRewardChange = (severity: Reward['severity'], amount: string) => {
+    const handleRewardChange = (severity: 'critical' | 'high' | 'medium' | 'low', amount: string) => {
         const num = parseInt(amount.replace(/,/g, ''), 10) || 0;
         const clamped = Math.max(0, Math.min(2147483647, num));
-        setRewards(rewards.map((r) => (r.severity === severity ? { ...r, amount: clamped } : r)));
+        if (severity === 'critical') setRewardCritical(clamped);
+        else if (severity === 'high') setRewardHigh(clamped);
+        else if (severity === 'medium') setRewardMedium(clamped);
+        else if (severity === 'low') setRewardLow(clamped);
     };
 
     /**
@@ -235,7 +230,12 @@ const ProgramForm: React.FC<ProgramFormProps> = ({
             // EDIT MODE: Use the complex structure required for updating.
             payload = {
                 details: { name, description, is_active: isActive },
-                rewards: rewards,
+                rewards: {
+                    critical: rewardCritical,
+                    high: rewardHigh,
+                    medium: rewardMedium,
+                    low: rewardLow
+                },
                 assets: {
                     assets_to_add: newlyAddedAssets.map(({ tempId, ...rest }) => rest),
                     asset_ids_to_delete: assetsToDelete,
@@ -248,7 +248,10 @@ const ProgramForm: React.FC<ProgramFormProps> = ({
                 description,
                 is_active: isActive,
                 organization_id: selectedOrgId,
-                rewards: rewards,
+                reward_critical: rewardCritical,
+                reward_high: rewardHigh,
+                reward_medium: rewardMedium,
+                reward_low: rewardLow,
                 // The creation endpoint likely expects a simple array of assets.
                 assets: newlyAddedAssets.map(({ tempId, ...rest }) => rest),
             };
@@ -422,25 +425,54 @@ const ProgramForm: React.FC<ProgramFormProps> = ({
                 <div className="border border-gray-300 rounded p-4 bg-white">
                     <h2 className="font-bold text-color-primary mb-4">{t('components.programForm.rewardGrid')}</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {rewards.map((reward) => (
-                            <div key={reward.severity}>
-                                <label
-                                    htmlFor={`reward-${reward.severity}`}
-                                    className="block text-color-primary font-bold mb-2 capitalize"
-                                >
-                                    {reward.severity}
-                                </label>
-                                <input
-                                    type="text"
-                                    id={`reward-${reward.severity}`}
-                                    value={reward.amount.toLocaleString()}
-                                    onChange={(e) =>
-                                        handleRewardChange(reward.severity, e.target.value.replace(/,/g, ''))
-                                    }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded text-color-primary focus:outline-none focus:border-indigo-500 focus:ring-indigo-500"
-                                />
-                            </div>
-                        ))}
+                        <div>
+                            <label htmlFor="reward-critical" className="block text-color-primary font-bold mb-2 capitalize">
+                                Critical
+                            </label>
+                            <input
+                                type="text"
+                                id="reward-critical"
+                                value={rewardCritical.toLocaleString()}
+                                onChange={(e) => handleRewardChange('critical', e.target.value.replace(/,/g, ''))}
+                                className="w-full px-3 py-2 border border-gray-300 rounded text-color-primary focus:outline-none focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="reward-high" className="block text-color-primary font-bold mb-2 capitalize">
+                                High
+                            </label>
+                            <input
+                                type="text"
+                                id="reward-high"
+                                value={rewardHigh.toLocaleString()}
+                                onChange={(e) => handleRewardChange('high', e.target.value.replace(/,/g, ''))}
+                                className="w-full px-3 py-2 border border-gray-300 rounded text-color-primary focus:outline-none focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="reward-medium" className="block text-color-primary font-bold mb-2 capitalize">
+                                Medium
+                            </label>
+                            <input
+                                type="text"
+                                id="reward-medium"
+                                value={rewardMedium.toLocaleString()}
+                                onChange={(e) => handleRewardChange('medium', e.target.value.replace(/,/g, ''))}
+                                className="w-full px-3 py-2 border border-gray-300 rounded text-color-primary focus:outline-none focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="reward-low" className="block text-color-primary font-bold mb-2 capitalize">
+                                Low
+                            </label>
+                            <input
+                                type="text"
+                                id="reward-low"
+                                value={rewardLow.toLocaleString()}
+                                onChange={(e) => handleRewardChange('low', e.target.value.replace(/,/g, ''))}
+                                className="w-full px-3 py-2 border border-gray-300 rounded text-color-primary focus:outline-none focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                        </div>
                     </div>
                 </div>
             </div>

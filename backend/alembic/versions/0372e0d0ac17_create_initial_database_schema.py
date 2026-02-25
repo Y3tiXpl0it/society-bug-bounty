@@ -117,6 +117,10 @@ def upgrade() -> None:
         sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('now()'), nullable=False),
         sa.Column('updated_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('now()'), nullable=False),
         sa.Column('deleted_at', sa.TIMESTAMP(timezone=True), nullable=True, default=None),
+        sa.Column('reward_critical', sa.Integer(), server_default='0', nullable=False),
+        sa.Column('reward_high', sa.Integer(), server_default='0', nullable=False),
+        sa.Column('reward_medium', sa.Integer(), server_default='0', nullable=False),
+        sa.Column('reward_low', sa.Integer(), server_default='0', nullable=False),
         sa.ForeignKeyConstraint(['organization_id'], ['organizations.id'], ),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('organization_id', 'slug', name='uq_organization_program_slug')
@@ -149,15 +153,6 @@ def upgrade() -> None:
             {"id": 8, "name": "desktop_app", "description": "A downloadable desktop application (Windows, macOS, Linux)."},
             {"id": 9, "name": "other", "description": "Any other type of asset not covered by the above categories."},
         ],
-    )
-
-    op.create_table('rewards',
-        sa.Column('id', sa.UUID(), nullable=False),
-        sa.Column('program_id', sa.UUID(), nullable=False),
-        sa.Column('severity', sa.Enum('critical', 'high', 'medium', 'low', name='severity_enum'), nullable=False),
-        sa.Column('amount', sa.Integer(), nullable=False),
-        sa.ForeignKeyConstraint(['program_id'], ['programs.id'], ),
-        sa.PrimaryKeyConstraint('id')
     )
 
     op.create_table('program_assets',
@@ -309,7 +304,10 @@ def downgrade() -> None:
     op.drop_table('reports')
     op.drop_constraint('uq_program_identifier', 'program_assets', type_='unique')
     op.drop_table('program_assets')
-    op.drop_table('rewards')
+    op.drop_column('programs', 'reward_low')
+    op.drop_column('programs', 'reward_medium')
+    op.drop_column('programs', 'reward_high')
+    op.drop_column('programs', 'reward_critical')
     op.drop_table('asset_types')
     op.drop_table('programs')
     op.drop_table('user_organization_memberships')

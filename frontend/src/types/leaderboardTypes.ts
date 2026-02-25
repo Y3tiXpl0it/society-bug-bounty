@@ -18,7 +18,6 @@ export interface LeaderboardEntry {
 
 export interface LeaderboardResponse {
     items: LeaderboardEntry[];
-    total: number;
     page: number;
     size: number;
 }

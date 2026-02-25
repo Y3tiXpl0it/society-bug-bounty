@@ -93,7 +93,9 @@ const EditProgramPage: React.FC = () => {
 
     // Marked as async to satisfy ProgramForm onSubmit type (Promise<void>)
     const handleUpdate = async (formData: any) => {
-        updateProgram(formData);
+        if (!isUpdating) {
+            updateProgram(formData);
+        }
     };
 
     const handleDelete = () => {
@@ -101,8 +103,9 @@ const EditProgramPage: React.FC = () => {
     };
 
     const confirmDelete = () => {
-        // Trigger mutation; modal closing is handled in onSuccess
-        deleteProgram();
+        if (!isDeleting) {
+            deleteProgram();
+        }
     };
 
     const cancelDelete = () => {

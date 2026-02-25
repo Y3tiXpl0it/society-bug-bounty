@@ -143,6 +143,7 @@ const ReportSubmitPage: React.FC = () => {
     };
 
     const confirmSubmit = () => {
+        if (isSubmitting) return;
         if (pendingFormData) {
             submitReport(pendingFormData);
         } else {

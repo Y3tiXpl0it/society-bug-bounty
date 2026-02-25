@@ -292,7 +292,8 @@
             "logout": "Logout",
             "login": "Log in",
             "programs": "Programs",
-            "myReports": "My Reports"
+            "myReports": "My Reports",
+            "leaderboard": "Leaderboard"
         },
         "notificationDropdown": {
             "title": "Notifications",
@@ -418,5 +419,31 @@
             "title": "Report Severity Updated",
             "message": "The severity of your report has changed from {{old_severity}} to {{new_severity}}."
         }
+    },
+    "leaderboard": {
+        "title": "Leaderboard",
+        "subtitle": "Top hackers ranked by their total contribution score.",
+        "headers": {
+            "rank": "Rank",
+            "hacker": "Hacker",
+            "score": "Score",
+            "reports": "Reports",
+            "breakdown": "Breakdown"
+        },
+        "bugTypes": {
+            "critical": "Critical Bugs",
+            "high": "High Bugs",
+            "medium": "Medium Bugs",
+            "low": "Low Bugs",
+            "c": "C",
+            "h": "H",
+            "m": "M",
+            "l": "L"
+        },
+        "emptyState": {
+            "title": "No hackers have made it to the leaderboard yet.",
+            "subtitle": "Submit valid vulnerability reports to secure your spot!"
+        },
+        "apiError": "Failed to load leaderboard data."
     }
 }

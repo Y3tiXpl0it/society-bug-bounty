@@ -58,15 +58,20 @@ const ManageProgramCard: React.FC<ManageProgramCardProps> = ({
                             <span>{program.name}</span>
                         </h2>
                         <p className="text-sm font-semibold text-green-600 mt-1">
-                            {formatReward(program.rewards)}
+                            {formatReward({
+                                critical: program.reward_critical,
+                                high: program.reward_high,
+                                medium: program.reward_medium,
+                                low: program.reward_low
+                            })}
                         </p>
                     </div>
                     {/* Right side of the content column (Action Button & Status) */}
                     <div className="flex-shrink-0 flex flex-col items-end">
                         <span
                             className={`mb-2 px-3 py-1 text-sm font-semibold rounded-full ${program.is_active
-                                    ? "bg-green-200 text-green-800"
-                                    : "bg-red-200 text-red-800"
+                                ? "bg-green-200 text-green-800"
+                                : "bg-red-200 text-red-800"
                                 }`}
                         >
                             {program.is_active ? t('components.manageProgramCard.active') : t('components.manageProgramCard.inactive')}

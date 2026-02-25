@@ -292,7 +292,8 @@
             "logout": "Cerrar Sesión",
             "login": "Iniciar Sesión",
             "programs": "Programas",
-            "myReports": "Mis Reportes"
+            "myReports": "Mis Reportes",
+            "leaderboard": "Clasificación"
         },
         "notificationDropdown": {
             "title": "Notificaciones",
@@ -418,5 +419,31 @@
             "title": "Severidad del reporte actualizada",
             "message": "La severidad de tu reporte ha cambiado de {{old_severity}} a {{new_severity}}."
         }
+    },
+    "leaderboard": {
+        "title": "Tabla de Líderes",
+        "subtitle": "Los mejores hackers clasificados por su puntuación de contribución total.",
+        "headers": {
+            "rank": "Posición",
+            "hacker": "Hacker",
+            "score": "Puntuación",
+            "reports": "Reportes",
+            "breakdown": "Desglose"
+        },
+        "bugTypes": {
+            "critical": "Errores Críticos",
+            "high": "Errores Altos",
+            "medium": "Errores Medios",
+            "low": "Errores Bajos",
+            "c": "C",
+            "h": "A",
+            "m": "M",
+            "l": "B"
+        },
+        "emptyState": {
+            "title": "Ningún hacker ha llegado a la tabla de líderes todavía.",
+            "subtitle": "¡Envía reportes de vulnerabilidad válidos para asegurar tu lugar!"
+        },
+        "apiError": "Error al cargar los datos de la tabla de líderes."
     }
 }

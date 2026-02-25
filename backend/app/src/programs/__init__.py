@@ -1,1 +1,1 @@
-from .models import Program, Reward, ProgramAsset
+from .models import Program, ProgramAsset

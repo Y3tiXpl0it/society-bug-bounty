@@ -48,7 +48,6 @@ class ReportRepository:
             .options(
                 joinedload(Report.hacker).joinedload(User.details),
                 joinedload(Report.program).joinedload(Program.organization),
-                joinedload(Report.program).joinedload(Program.rewards),
                 selectinload(Report.assets).joinedload(ProgramAsset.asset_type),
                  # Use selectinload for collections in async context
                 selectinload(Report.attachments)
@@ -78,7 +77,6 @@ class ReportRepository:
             .where(Report.id == report_id)
             .options(
                 joinedload(Report.hacker).joinedload(User.details),
-                joinedload(Report.program).joinedload(Program.rewards),
                 joinedload(Report.program).joinedload(Program.organization),
                 selectinload(Report.assets).joinedload(ProgramAsset.asset_type),
                 selectinload(Report.attachments)

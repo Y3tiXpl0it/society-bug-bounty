@@ -147,7 +147,7 @@ const Navbar: React.FC = () => {
                                 to="/leaderboard"
                                 className="text-gray-600 hover:text-indigo-700 px-3 py-2 rounded-md text-sm font-medium"
                             >
-                                Leaderboard
+                                {t('components.navbar.leaderboard')}
                             </Link>
                             {isLoggedIn && (
                                 <Link

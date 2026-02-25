@@ -1,5 +1,4 @@
 // src/utils/programHelpers.ts
-import { type Reward } from '../types/programTypes';
 
 /**
  * Generates the first letter of the first two words of a name.
@@ -21,14 +20,15 @@ export const getInitials = (name: string): string => {
  * - If all rewards are 0, it shows "$0".
  * - If only one tier has an amount, it shows that amount (e.g., "$500").
  * - If multiple tiers have amounts, it shows a range (e.g., "$100 - $2500").
- * @param rewards The array of reward objects.
+ * @param rewards Object containing the 4 reward amounts
  * @returns A formatted string representing the reward.
  */
-export const formatReward = (rewards: Reward[]): string => {
-    if (!rewards || rewards.length === 0) {
+export const formatReward = (rewards: { critical: number, high: number, medium: number, low: number }): string => {
+    if (!rewards) {
         return 'Not specified';
     }
-    const validAmounts = rewards.map((r) => r.amount).filter((amount) => amount > 0);
+    const amounts = [rewards.critical, rewards.high, rewards.medium, rewards.low];
+    const validAmounts = amounts.filter((amount) => amount > 0);
     if (validAmounts.length === 0) {
         return '$0';
     }

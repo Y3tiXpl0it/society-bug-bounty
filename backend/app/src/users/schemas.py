@@ -134,6 +134,5 @@ class LeaderboardEntry(BaseModel):
 
 class LeaderboardResponse(BaseModel):
     items: list[LeaderboardEntry]
-    total: int
     page: int
     size: int

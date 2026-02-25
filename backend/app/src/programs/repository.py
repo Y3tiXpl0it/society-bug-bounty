@@ -10,7 +10,7 @@ from sqlalchemy.orm import selectinload, joinedload
 from app.core.exceptions import NotFoundException, AlreadyExistsException, BadRequestException
 from app.core.error_codes import ErrorCode
 from app.core.logging import get_logger
-from app.src.programs.models import Program, ProgramAsset, Reward, SeverityEnum
+from app.src.programs.models import Program, ProgramAsset, SeverityEnum
 from app.src.programs.schemas import ProgramBulkUpdate, ProgramCreate
 from slugify import slugify
 
@@ -56,7 +56,6 @@ class ProgramRepository:
                 )
             )
             .options(
-                selectinload(Program.rewards),
                 selectinload(Program.assets).selectinload(ProgramAsset.asset_type),
                 joinedload(Program.organization)
             )
@@ -98,24 +97,11 @@ class ProgramRepository:
         """
         # Note: The check for duplicate program name is handled in the service layer.
         
-        program_dict = program_data.model_dump(exclude={"rewards", "assets"})
+        program_dict = program_data.model_dump(exclude={"assets"})
         program_dict['slug'] = slugify(program_data.name)
         program = Program(**program_dict)
         self.session.add(program)
         
-        if program_data.rewards:
-            for reward_item in program_data.rewards:
-                reward = Reward(**reward_item.model_dump(), program=program)
-                self.session.add(reward)
-        else:
-            default_severities = [
-                SeverityEnum.critical, SeverityEnum.high,
-                SeverityEnum.medium, SeverityEnum.low,
-            ]
-            for severity in default_severities:
-                reward = Reward(severity=severity, amount=0, program=program)
-                self.session.add(reward)
-
         for asset_item in program_data.assets:
             asset = ProgramAsset(**asset_item.model_dump(), program=program)
             self.session.add(asset)
@@ -123,7 +109,7 @@ class ProgramRepository:
         # The UniqueConstraint on the model will automatically prevent duplicate assets
         # within this creation transaction upon commit.
         await self.session.commit()
-        await self.session.refresh(program, attribute_names=["rewards", "assets"])
+        await self.session.refresh(program, attribute_names=["assets"])
         return program
 
 
@@ -134,7 +120,7 @@ class ProgramRepository:
         query = (
             select(Program)
             .where(Program.id == program_id)
-            .options(selectinload(Program.rewards), selectinload(Program.assets))
+            .options(selectinload(Program.assets))
         )
         result = await self.session.execute(query)
         program = result.scalar_one_or_none()
@@ -159,7 +145,6 @@ class ProgramRepository:
             .offset(skip)
             .limit(limit)
             .options(
-                selectinload(Program.rewards),
                 joinedload(Program.organization)
             )
         )
@@ -199,7 +184,6 @@ class ProgramRepository:
                     Program.deleted_at.is_(None)
                 ))
             .options(
-                selectinload(Program.rewards), 
                 selectinload(Program.assets),
                 joinedload(Program.organization)
             )
@@ -223,10 +207,14 @@ class ProgramRepository:
 
         # Update reward amounts if provided.
         if update_data.rewards is not None:
-            existing_rewards_map = {reward.severity: reward for reward in program_to_update.rewards}
-            for reward_update in update_data.rewards:
-                if reward_update.severity in existing_rewards_map:
-                    existing_rewards_map[reward_update.severity].amount = reward_update.amount
+            if "critical" in update_data.rewards:
+                program_to_update.reward_critical = update_data.rewards["critical"]
+            if "high" in update_data.rewards:
+                program_to_update.reward_high = update_data.rewards["high"]
+            if "medium" in update_data.rewards:
+                program_to_update.reward_medium = update_data.rewards["medium"]
+            if "low" in update_data.rewards:
+                program_to_update.reward_low = update_data.rewards["low"]
 
         # Add or delete assets if provided.
         if update_data.assets:

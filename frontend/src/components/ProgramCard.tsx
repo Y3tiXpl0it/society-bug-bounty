@@ -55,7 +55,12 @@ const ProgramCard: React.FC<ProgramCardProps> = ({ program }) => {
                                 {program.name}
                             </Link>
                         </h2>
-                        <p className="text-sm font-semibold text-green-600 mt-1">{formatReward(program.rewards)}</p>
+                        <p className="text-sm font-semibold text-green-600 mt-1">{formatReward({
+                            critical: program.reward_critical,
+                            high: program.reward_high,
+                            medium: program.reward_medium,
+                            low: program.reward_low
+                        })}</p>
                     </div>
                     {/* Right side of the content column (Action Button) */}
                     <div className="flex-shrink-0">

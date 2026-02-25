@@ -1,5 +1,5 @@
 // src/pages/ProgramDetailPage.tsx
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
 import programService from '../services/programService';
 import { generateBackgroundColor } from '../utils/colorHelper';
-import { getInitials, formatReward } from '../utils/programHelper';
+import { getInitials } from '../utils/programHelper';
 import { getProgramMarkdownComponents } from '../utils/markdownComponents';
 import { getAssetTypeDisplayName } from '../utils/assetTypeHelper';
 import remarkGfm from 'remark-gfm';
@@ -69,16 +69,7 @@ const ProgramDetailPage: React.FC = () => {
     // 3. Render Logic
     // -------------------------------------------------------------------------
 
-    // Sort rewards by severity descending
-    const sortedRewards = useMemo(() => {
-        if (!program) return [];
-        return [...program.rewards].sort((a, b) => {
-            const severityOrder: Record<string, number> = { low: 1, medium: 2, high: 3, critical: 4 };
-            const severityA = severityOrder[a.severity] || 0;
-            const severityB = severityOrder[b.severity] || 0;
-            return severityB - severityA;
-        });
-    }, [program]);
+    // -------------------------------------------------------------------------
 
     return (
         <AsyncContent
@@ -180,7 +171,12 @@ const ProgramDetailPage: React.FC = () => {
                                 <div className="bg-white shadow-lg rounded p-8">
                                     <h2 className="text-xl font-bold text-center">{t('programDetail.rewards')}</h2>
                                     <div className="mt-6 space-y-4">
-                                        {sortedRewards.map((reward) => (
+                                        {[
+                                            { severity: 'critical', amount: program.reward_critical },
+                                            { severity: 'high', amount: program.reward_high },
+                                            { severity: 'medium', amount: program.reward_medium },
+                                            { severity: 'low', amount: program.reward_low },
+                                        ].map((reward) => (
                                             <div
                                                 key={reward.severity}
                                                 className="flex justify-between items-center p-3 bg-gray-50 rounded-md"
@@ -189,7 +185,7 @@ const ProgramDetailPage: React.FC = () => {
                                                     {reward.severity}
                                                 </span>
                                                 <span className="font-bold text-green-600 text-base">
-                                                    {formatReward([reward])}
+                                                    {(reward.amount > 0) ? `$${reward.amount.toLocaleString()}` : '$0'}
                                                 </span>
                                             </div>
                                         ))}

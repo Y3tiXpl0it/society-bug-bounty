@@ -72,7 +72,7 @@ const CreateProgramPage: React.FC = () => {
     };
 
     const confirmSubmit = () => {
-        if (pendingFormData) {
+        if (pendingFormData && !isSubmitting) {
             createProgram(pendingFormData);
         }
     };

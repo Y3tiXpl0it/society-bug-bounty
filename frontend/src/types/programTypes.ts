@@ -1,14 +1,7 @@
 // frontend/src/types/programTypes.ts
 import type { Organization } from './commonTypes';
 
-/**
- * Defines the structure for a program's reward, mapping a severity level
- * to a specific monetary amount.
- */
-export interface Reward {
-    severity: 'critical' | 'high' | 'medium' | 'low';
-    amount: number;
-}
+
 
 /**
  * Represents an asset that is already persisted in the database.
@@ -44,7 +37,10 @@ export interface ProgramSummary {
     slug: string;
     is_active: boolean;
     deleted_at: string | null;
-    rewards: Reward[];
+    reward_critical: number;
+    reward_high: number;
+    reward_medium: number;
+    reward_low: number;
     organization: Organization;
 }
 
@@ -66,19 +62,16 @@ export interface ProgramDetail {
     slug: string;
     description: string;
     is_active: boolean;
-    rewards: Reward[];
+    reward_critical: number;
+    reward_high: number;
+    reward_medium: number;
+    reward_low: number;
     assets: Asset[];
     organization: Organization;
     organization_id: string;
 }
 
-/**
- * Defines the structure for reward data sent to the API.
- */
-interface RewardData {
-    severity: 'critical' | 'high' | 'medium' | 'low';
-    amount: number;
-}
+
 
 /**
  * Defines the structure for creating a new asset.
@@ -96,7 +89,10 @@ export interface ProgramCreateData {
     name: string;
     description: string;
     organization_id: string;
-    rewards: RewardData[];
+    reward_critical?: number;
+    reward_high?: number;
+    reward_medium?: number;
+    reward_low?: number;
     assets: AssetCreateData[];
     is_active?: boolean;
 }
@@ -125,6 +121,6 @@ interface AssetsBulkUpdateData {
  */
 export interface ProgramBulkUpdateData {
     details?: ProgramUpdateData;
-    rewards?: RewardData[];
+    rewards?: Record<string, number>;
     assets?: AssetsBulkUpdateData;
 }

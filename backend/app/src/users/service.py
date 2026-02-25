@@ -402,20 +402,14 @@ class UserService:
 
         skip = (page - 1) * size
 
-        # Get total count (excluding temporary users)
-        result_total = await self.session.execute(
-            select(func.count(UserStats.user_id))
-            .join(User, UserStats.user_id == User.id)
-            .where(User.is_temporary == False)
-        )
-        total = result_total.scalar_one_or_none() or 0
 
-        # Get paginated data joined with user details (excluding temporary users)
+        # Get paginated data joined with user details (excluding temporary users and score > 0)
         stmt = (
             select(UserStats, UserDetails.username, UserDetails.avatar_url)
             .join(User, UserStats.user_id == User.id)
             .join(UserDetails, User.id == UserDetails.user_id)
             .where(User.is_temporary == False)
+            .where(UserStats.total_score > 0)
             .order_by(UserStats.total_score.desc(), UserStats.total_reports.desc())
             .offset(skip)
             .limit(size)
@@ -443,7 +437,6 @@ class UserService:
 
         return {
             "items": items,
-            "total": total,
             "page": page,
             "size": size
         }
