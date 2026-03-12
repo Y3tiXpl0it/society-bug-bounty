@@ -38,7 +38,7 @@ const ReportSubmitForm: React.FC<ReportSubmitFormProps> = ({
         files: z.array(z.instanceof(File)).refine(
             (files) =>
                 files.every((file) => {
-                    const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+                    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
                     return validTypes.includes(file.type) && file.name.length <= 255;
                 }),
             t('errors.INVALID_FILE_TYPE_OR_NAME') // Need to add this key
@@ -214,7 +214,7 @@ const ReportSubmitForm: React.FC<ReportSubmitFormProps> = ({
                             imageMap={imageMap}
                             label="Description"
                             attachmentLabel="Attachments"
-                            attachmentDescription="You can attach images (JPEG, JPG, PNG) to support your report."
+                            attachmentDescription="You can attach images (JPEG, JPG, PNG, WEBP) to support your report."
                             showSubmitButton={false}
                             onFileRemove={removeFile}
                             onFileAdd={handleFileChange}

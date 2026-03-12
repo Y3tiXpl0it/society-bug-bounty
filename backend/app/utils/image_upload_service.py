@@ -24,7 +24,7 @@ class ImageUploadService:
         file: UploadFile,
         upload_dir: Path,
         max_size: int,
-        allowed_extensions: list[str] = ['.jpg', '.jpeg', '.png']
+        allowed_extensions: list[str] = ['.jpg', '.jpeg', '.png', '.webp']
     ) -> dict:
         """
         Validates and saves an uploaded image file.

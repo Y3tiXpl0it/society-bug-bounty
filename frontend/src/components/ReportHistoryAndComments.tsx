@@ -41,6 +41,14 @@ const ReportHistoryAndComments: React.FC<ReportHistoryAndCommentsProps> = ({
         content: z.string()
             .min(1, t('errors.COMMENT_CONTENT_EMPTY'))
             .max(10000, t('errors.COMMENT_CONTENT_TOO_LONG', { max_length: 10000 })),
+        files: z.array(z.instanceof(File)).refine(
+            (files) =>
+                files.every((file) => {
+                    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+                    return validTypes.includes(file.type) && file.name.length <= 255;
+                }),
+            t('errors.INVALID_FILE_TYPE_OR_NAME')
+        ).optional(),
     });
     const [reportHistory, setReportHistory] = useState<ReportEvent[]>([]);
     const [loadingHistory, setLoadingHistory] = useState<boolean>(true);
@@ -85,7 +93,17 @@ const ReportHistoryAndComments: React.FC<ReportHistoryAndCommentsProps> = ({
     // Handle comment submission
     const handleCommentSubmit = async (formData: FormData) => {
         const content = formData.get('content') as string;
-        const result = commentSchema.safeParse({ content: content.trim() });
+        const currentFiles: File[] = [];
+        for (const [, value] of formData.entries()) {
+            if (value instanceof File) {
+                currentFiles.push(value);
+            }
+        }
+
+        const result = commentSchema.safeParse({
+            content: content.trim(),
+            files: currentFiles.length > 0 ? currentFiles : undefined
+        });
         if (!result.success) {
             setCommentError(result.error.issues.map((issue) => issue.message).join(', '));
             return;
@@ -213,7 +231,7 @@ const ReportHistoryAndComments: React.FC<ReportHistoryAndCommentsProps> = ({
                                 imageMap={imageMap}
                                 label={t('components.reportHistoryAndComments.addCommentLabel')}
                                 attachmentLabel="Attachments"
-                                attachmentDescription="You can attach images (JPEG, JPG, PNG) to support your comment."
+                                attachmentDescription="You can attach images (JPEG, JPG, PNG, WEBP) to support your comment."
                                 showSubmitButton={true}
                                 submitButtonText={t('components.reportHistoryAndComments.addCommentButton')}
                                 onSubmit={handleCommentSubmit}
