@@ -421,7 +421,7 @@
         }
     },
     "leaderboard": {
-        "title": "Tabla de Líderes",
+        "title": "Tabla de Clasificación",
         "subtitle": "Los mejores hackers clasificados por su puntuación de contribución total.",
         "headers": {
             "rank": "Posición",
@@ -441,9 +441,9 @@
             "l": "B"
         },
         "emptyState": {
-            "title": "Ningún hacker ha llegado a la tabla de líderes todavía.",
+            "title": "Ningún hacker ha llegado a la tabla de clasificación todavía.",
             "subtitle": "¡Envía reportes de vulnerabilidad válidos para asegurar tu lugar!"
         },
-        "apiError": "Error al cargar los datos de la tabla de líderes."
+        "apiError": "Error al cargar los datos de la tabla de clasificación."
     }
 }
