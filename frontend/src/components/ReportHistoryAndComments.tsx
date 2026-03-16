@@ -225,7 +225,7 @@ const ReportHistoryAndComments: React.FC<ReportHistoryAndCommentsProps> = ({
                             <MarkdownEditor
                                 value={commentContent}
                                 onChange={setCommentContent}
-                                height={200}
+                                height={300}
                                 files={commentFiles}
                                 onFilesChange={setCommentFiles}
                                 imageMap={imageMap}

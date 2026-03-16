@@ -348,7 +348,7 @@
             "affectedAssets": "Activos Afectados",
             "affectedAssetsDesc": "Selecciona los activos afectados por esta vulnerabilidad.",
             "severityScore": "Puntaje de Severidad",
-            "severityDesc": "Ingresa un puntaje basado en el estándar CVSS v3.1 (0.0 a 10.0).",
+            "severityDesc": "Ingresa un puntaje basado en el estándar CVSS v3.1 (0.1 a 10.0).",
             "vulnerabilityTitle": "Título de la Vulnerabilidad",
             "submit": "Enviar Reporte",
             "submitting": "Enviando..."

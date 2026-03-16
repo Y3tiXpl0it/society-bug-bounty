@@ -21,17 +21,7 @@ from app.core.exceptions import NotFoundException, AlreadyExistsException, BadRe
 app = typer.Typer()
 
 
-def _format_error(detail) -> str:
-    """
-    Extracts a human-readable message from an exception's detail field.
-    After the error-code refactoring, detail is a dict like:
-        {'code': ErrorCode.SOME_CODE, 'message': '...', 'params': {...}}
-    This helper returns the 'message' value when available, or falls back
-    to a plain string representation for legacy / unexpected shapes.
-    """
-    if isinstance(detail, dict):
-        return detail.get("message") or str(detail)
-    return str(detail)
+from app.cli.utils import format_cli_error
 
 
 @asynccontextmanager
@@ -78,7 +68,7 @@ def create_org(name: str = typer.Option(..., "--name", "-n"), logo_url: str = ty
                 typer.echo(f"   ID: {new_org.id}")
                 typer.echo(f"   Slug: {new_org.slug}")
             except (AlreadyExistsException, BadRequestException) as e:
-                typer.echo(f"❌ Error: {_format_error(e.detail)}")
+                typer.echo(f"❌ Error: {format_cli_error(e.detail)}")
                 raise typer.Exit(code=1)
     asyncio.run(_create_org())
 
@@ -92,7 +82,7 @@ def add_user(email: str = typer.Option(..., "--email", "-e"), org_slug: str = ty
                 await org_service.add_user_to_organization(email, org_slug)
                 typer.echo(f"✅ User '{email}' added to organization '{org_slug}' successfully")
             except NotFoundException as e:
-                typer.echo(f"❌ Error: {_format_error(e.detail)}")
+                typer.echo(f"❌ Error: {format_cli_error(e.detail)}")
                 raise typer.Exit(code=1)
     asyncio.run(_add_user())
 
@@ -106,7 +96,7 @@ def remove_user(email: str = typer.Option(..., "--email", "-e"), org_slug: str =
                 await org_service.remove_user_from_organization(email, org_slug)
                 typer.echo(f"✅ User '{email}' removed from organization '{org_slug}' successfully")
             except NotFoundException as e:
-                typer.echo(f"❌ Error: {_format_error(e.detail)}")
+                typer.echo(f"❌ Error: {format_cli_error(e.detail)}")
                 raise typer.Exit(code=1)
     asyncio.run(_remove_user())
 
@@ -154,7 +144,7 @@ def update_logo(
                 typer.echo(f"   New URL: {updated_org.logo_url}")
 
             except NotFoundException as e:
-                typer.echo(f"❌ Error: {_format_error(e.detail)}")
+                typer.echo(f"❌ Error: {format_cli_error(e.detail)}")
                 raise typer.Exit(code=1)
             except Exception as e:
                 # Catch image validation errors (size, format) or IO errors

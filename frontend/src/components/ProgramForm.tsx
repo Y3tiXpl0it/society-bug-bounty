@@ -312,7 +312,7 @@ const ProgramForm: React.FC<ProgramFormProps> = ({
                             <MarkdownEditor
                                 value={description}
                                 onChange={setDescription}
-                                height={400}
+                                height={500}
                                 files={[]} // Empty array since programs don't need attachments for now
                                 onFilesChange={() => { }} // No-op since we don't handle attachments
                                 imageMap={{}}

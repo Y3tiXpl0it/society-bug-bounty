@@ -348,7 +348,7 @@
             "affectedAssets": "Affected Assets",
             "affectedAssetsDesc": "Select the assets that are affected by this vulnerability.",
             "severityScore": "Severity Score",
-            "severityDesc": "Enter a severity score based on the CVSS v3.1 standard (0.0 to 10.0).",
+            "severityDesc": "Enter a severity score based on the CVSS v3.1 standard (0.1 to 10.0).",
             "vulnerabilityTitle": "Vulnerability Title",
             "submit": "Submit Report",
             "submitting": "Submitting..."

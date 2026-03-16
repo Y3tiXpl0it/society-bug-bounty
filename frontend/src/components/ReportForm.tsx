@@ -208,7 +208,7 @@ const ReportSubmitForm: React.FC<ReportSubmitFormProps> = ({
                         <MarkdownEditor
                             value={description}
                             onChange={setDescription}
-                            height={400}
+                            height={500}
                             files={files}
                             onFilesChange={setFiles}
                             imageMap={imageMap}

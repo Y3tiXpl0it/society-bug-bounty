@@ -440,3 +440,28 @@ class UserService:
             "page": page,
             "size": size
         }
+
+    async def set_user_activity_status(self, email: str, is_active: bool) -> User:
+        """
+        Suspends or activates a user by setting the is_active flag.
+        Throws appropriate exceptions if the user is not found or already in the requested state.
+        """
+        user = await self.get_user_by_email(email)
+        
+        if not user:
+            raise NotFoundException(detail={
+                "code": ErrorCode.USER_NOT_FOUND,
+                "message": f"User with email '{email}' not found."
+            })
+            
+        if user.is_active == is_active:
+            action = "active" if is_active else "suspended"
+            raise BadRequestException(detail={
+                "code": ErrorCode.BAD_REQUEST,
+                "message": f"User '{email}' is already {action}."
+            })
+            
+        user.is_active = is_active
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user

@@ -52,7 +52,7 @@ interface MarkdownEditorProps {
 const CustomMarkdownEditor: React.FC<MarkdownEditorProps> = ({
     value,
     onChange,
-    height = 200,
+    height = 300,
     files,
     onFilesChange,
     accept = "image/*",
