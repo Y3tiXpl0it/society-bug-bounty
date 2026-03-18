@@ -42,7 +42,7 @@ const SeverityInput: React.FC<SeverityInputProps> = ({
                 <span
                     className={`px-2.5 py-1 text-xs font-semibold rounded-full ${severityInfo.color}`}
                 >
-                    {getTranslatedSeverity(currentSeverity || 0, t)} ({currentSeverity ? currentSeverity.toFixed(1) : '0.0'})
+                    {getTranslatedSeverity(currentSeverity || 0, t)}
                 </span>
                 <button
                     onClick={toggleOpen}
@@ -91,7 +91,7 @@ const SeverityInput: React.FC<SeverityInputProps> = ({
                             </div>
                             <div className="text-xs text-gray-600 mt-2 mb-1 whitespace-nowrap">
                                 {t('components.severityInput.selected')} <span className={`px-2 py-1 rounded-full ${selectedSeverityInfo.color}`}>
-                                    {getTranslatedSeverity(parseFloat(selectedSeverity) || 0, t)} ({(parseFloat(selectedSeverity) || 0).toFixed(1)})
+                                    {getTranslatedSeverity(parseFloat(selectedSeverity) || 0, t)}
                                 </span>
                             </div>
                         </div>

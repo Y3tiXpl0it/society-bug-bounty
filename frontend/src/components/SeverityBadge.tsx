@@ -12,11 +12,9 @@ interface SeverityBadgeProps {
 const SeverityBadge: React.FC<SeverityBadgeProps> = ({ severity, className = '' }) => {
     const { t } = useTranslation();
     const info = getSeverityInfo(severity);
-    const displayScore = severity ? severity.toFixed(1) : '0.0';
 
-    // Use helper to translate category
-    const translatedCategory = getTranslatedSeverity(severity, t);
-    const display = `${translatedCategory} (${displayScore})`;
+    // getTranslatedSeverity already includes the score, e.g. "Alta (7.5)"
+    const display = getTranslatedSeverity(severity, t);
 
     return (
         <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${info.color} ${className}`}>

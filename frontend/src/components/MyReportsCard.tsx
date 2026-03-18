@@ -2,8 +2,8 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ReportMyReportsSummary } from '../types/reportTypes';
-import { getSeverityInfo } from '../utils/severityHelper';
-import { getStatusInfo } from '../utils/statusHelper';
+import { getSeverityInfo, getTranslatedSeverity } from '../utils/severityHelper';
+import { getStatusInfo, getTranslatedStatus } from '../utils/statusHelper';
 
 interface MyReportsCardProps {
     report: ReportMyReportsSummary;
@@ -34,10 +34,10 @@ const MyReportsCard: React.FC<MyReportsCardProps> = ({
                 </div>
                 <div className="flex items-center space-x-1">
                     <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${statusInfo.color}`}>
-                        {statusInfo.label}
+                        {getTranslatedStatus(report.status, t)}
                     </span>
                     <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${severityInfo.color}`}>
-                        {severityInfo.category} ({(report.severity || 0).toFixed(1)})
+                        {getTranslatedSeverity(report.severity, t)}
                     </span>
                 </div>
             </div>

@@ -65,5 +65,9 @@ export const getTranslatedSeverity = (severity: string | number | null, t: (key:
 
     // Check keyMap; fallback to raw category name if translation fails
     const key = keyMap[info.category];
-    return key ? t(`components.severityBadge.${key}`) : info.category;
+    const translatedCategory = key ? t(`components.severityBadge.${key}`) : info.category;
+
+    // Include the numeric score for clarity (e.g. "Alta (7.5)")
+    const score = numSeverity != null && !isNaN(numSeverity) ? numSeverity.toFixed(1) : null;
+    return score !== null ? `${translatedCategory} (${score})` : translatedCategory;
 };

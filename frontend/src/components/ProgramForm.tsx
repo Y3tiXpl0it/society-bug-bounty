@@ -426,26 +426,14 @@ const ProgramForm: React.FC<ProgramFormProps> = ({
                     <h2 className="font-bold text-color-primary mb-4">{t('components.programForm.rewardGrid')}</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
-                            <label htmlFor="reward-critical" className="block text-color-primary font-bold mb-2 capitalize">
-                                Critical
+                            <label htmlFor="reward-low" className="block text-color-primary font-bold mb-2 capitalize">
+                                Low
                             </label>
                             <input
                                 type="text"
-                                id="reward-critical"
-                                value={rewardCritical.toLocaleString()}
-                                onChange={(e) => handleRewardChange('critical', e.target.value.replace(/,/g, ''))}
-                                className="w-full px-3 py-2 border border-gray-300 rounded text-color-primary focus:outline-none focus:border-indigo-500 focus:ring-indigo-500"
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="reward-high" className="block text-color-primary font-bold mb-2 capitalize">
-                                High
-                            </label>
-                            <input
-                                type="text"
-                                id="reward-high"
-                                value={rewardHigh.toLocaleString()}
-                                onChange={(e) => handleRewardChange('high', e.target.value.replace(/,/g, ''))}
+                                id="reward-low"
+                                value={rewardLow.toLocaleString()}
+                                onChange={(e) => handleRewardChange('low', e.target.value.replace(/,/g, ''))}
                                 className="w-full px-3 py-2 border border-gray-300 rounded text-color-primary focus:outline-none focus:border-indigo-500 focus:ring-indigo-500"
                             />
                         </div>
@@ -462,14 +450,26 @@ const ProgramForm: React.FC<ProgramFormProps> = ({
                             />
                         </div>
                         <div>
-                            <label htmlFor="reward-low" className="block text-color-primary font-bold mb-2 capitalize">
-                                Low
+                            <label htmlFor="reward-high" className="block text-color-primary font-bold mb-2 capitalize">
+                                High
                             </label>
                             <input
                                 type="text"
-                                id="reward-low"
-                                value={rewardLow.toLocaleString()}
-                                onChange={(e) => handleRewardChange('low', e.target.value.replace(/,/g, ''))}
+                                id="reward-high"
+                                value={rewardHigh.toLocaleString()}
+                                onChange={(e) => handleRewardChange('high', e.target.value.replace(/,/g, ''))}
+                                className="w-full px-3 py-2 border border-gray-300 rounded text-color-primary focus:outline-none focus:border-indigo-500 focus:ring-indigo-500"
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="reward-critical" className="block text-color-primary font-bold mb-2 capitalize">
+                                Critical
+                            </label>
+                            <input
+                                type="text"
+                                id="reward-critical"
+                                value={rewardCritical.toLocaleString()}
+                                onChange={(e) => handleRewardChange('critical', e.target.value.replace(/,/g, ''))}
                                 className="w-full px-3 py-2 border border-gray-300 rounded text-color-primary focus:outline-none focus:border-indigo-500 focus:ring-indigo-500"
                             />
                         </div>

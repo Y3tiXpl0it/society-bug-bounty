@@ -8,6 +8,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
 import programService from '../services/programService';
 import { generateBackgroundColor } from '../utils/colorHelper';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 import { getInitials } from '../utils/programHelper';
 import { getProgramMarkdownComponents } from '../utils/markdownComponents';
 import { getAssetTypeDisplayName } from '../utils/assetTypeHelper';
@@ -86,7 +88,7 @@ const ProgramDetailPage: React.FC = () => {
                             <div className="w-20 h-20 rounded-md flex-shrink-0">
                                 {program.organization.logo_url ? (
                                     <img
-                                        src={program.organization.logo_url}
+                                        src={`${API_BASE_URL}${program.organization.logo_url}`}
                                         alt={`${program.organization.name} logo`}
                                         className="w-full h-full object-cover rounded-md"
                                     />
