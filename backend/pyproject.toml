@@ -38,6 +38,7 @@ dependencies = [
 
 [project.scripts]
 manage-organizations = "app.cli.manage_organizations:app"
+manage-users = "app.cli.manage_users:app"
 
 [tool.setuptools.packages.find]
 where = ["."]

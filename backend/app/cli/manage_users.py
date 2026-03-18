@@ -12,7 +12,7 @@ from app.core.exceptions import NotFoundException, BadRequestException
 from app.cli.utils import format_cli_error
 
 # Creates the Typer application for user management
-app = typer.Typer(help="Manage users in the system.")
+app = typer.Typer(help="Manage users in the system.", add_completion=False)
 
 
 @asynccontextmanager

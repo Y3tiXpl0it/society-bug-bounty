@@ -49,9 +49,7 @@ const logout = async (accessToken: string | null): Promise<void> => {
  * Creates a new guest account (with Turnstile CAPTCHA verification)
  */
 const createGuestAccount = async (turnstileToken: string): Promise<{
-    access_token: string;
     guest_credentials: { username: string; password: string };
-    user: AuthUser;
 }> => {
     const response = await apiFetch('/auth/guest', null, {
         method: 'POST',

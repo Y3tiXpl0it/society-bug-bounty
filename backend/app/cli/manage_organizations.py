@@ -18,7 +18,7 @@ from app.src.organizations.service import OrganizationService
 from app.core.exceptions import NotFoundException, AlreadyExistsException, BadRequestException
 
 # Creates the main Typer application for the command-line interface.
-app = typer.Typer()
+app = typer.Typer(help="Manage organizations in the system.", add_completion=False)
 
 
 from app.cli.utils import format_cli_error
