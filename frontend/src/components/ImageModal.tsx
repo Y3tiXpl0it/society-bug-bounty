@@ -52,12 +52,9 @@ const ImageModal: React.FC<ImageModalProps> = ({
                 try {
                     const fullUrl = imageSrc.startsWith('http') ? imageSrc : `${API_BASE_URL}${imageSrc}`;
 
-                    // Use the provided accessToken or fall back to localStorage
-                    const tokenToUse = accessToken || localStorage.getItem('access_token');
-
                     const response = await axios.get(fullUrl, {
                         headers: {
-                            Authorization: `Bearer ${tokenToUse}`,
+                            Authorization: `Bearer ${accessToken}`,
                         },
                         responseType: 'blob',
                     });
