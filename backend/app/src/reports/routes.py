@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import attributes
 from app.core.config import settings
 from app.core.database import get_session
-from app.core.dependencies import get_current_active_user, get_authorized_report, can_update_report_status, can_update_own_report_details, can_update_own_comment, get_connection_manager
+from app.core.dependencies import get_current_active_user, get_authorized_report, can_update_report_status, get_connection_manager
 from app.core.exceptions import NotFoundException, BadRequestException
 from app.core.error_codes import ErrorCode
 from app.src.users.models import User
@@ -56,17 +56,7 @@ async def get_report_details(
     return response
 
 
-@router.patch("/{report_id}", response_model=ReportResponse)
-async def update_report_details(
-    report_id: uuid.UUID,
-    update_data: dict,
-    current_user: User = Depends(can_update_own_report_details),
-    session: AsyncSession = Depends(get_session),
-):
-    """Updates report details (only the hacker who submitted the report)."""
-    service = ReportService(session)
-    # Update the report
-    return await service.repository.update(report_id, update_data)
+
 
 
 @router.patch("/{report_id}/status", response_model=ReportResponse)
@@ -159,30 +149,7 @@ async def add_comment_to_report(
     )
 
 
-@router.patch("/{report_id}/comments/{comment_id}", response_model=ReportCommentResponse)
-async def update_comment(
-    report_id: uuid.UUID,
-    comment_id: uuid.UUID,
-    update_data: dict,
-    current_user: User = Depends(can_update_own_comment),
-    session: AsyncSession = Depends(get_session),
-):
-    """Updates a comment on a report (only the author can update their own comments)."""
-    service = ReportService(session)
-    updated_comment = await service.update_comment(comment_id, update_data, current_user)
 
-    # Load attachments for the response
-    attachment_service = AttachmentService(session)
-    attachments = await attachment_service.get_attachments_by_entity(EntityType.REPORT_COMMENT, updated_comment.id)
-
-    return ReportCommentResponse(
-        id=updated_comment.id,
-        user_id=updated_comment.user_id,
-        content=updated_comment.content,
-        created_at=updated_comment.created_at,
-        updated_at=updated_comment.updated_at,
-        attachments=[AttachmentResponse.model_validate(att) for att in attachments]
-    )
 
 
 @router.patch("/{report_id}/severity", response_model=ReportResponse)

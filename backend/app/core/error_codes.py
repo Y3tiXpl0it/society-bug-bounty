@@ -34,8 +34,7 @@ class ErrorCode(str, Enum):
     # Report related errors
     REPORT_NOT_FOUND = "REPORT_NOT_FOUND"
     INVALID_ASSET_IDS = "INVALID_ASSET_IDS"
-    COMMENT_NOT_FOUND = "COMMENT_NOT_FOUND"
-    NOT_YOUR_COMMENT = "NOT_YOUR_COMMENT"
+
     CANNOT_EDIT_DELETED_PROGRAM = "CANNOT_EDIT_DELETED_PROGRAM"
     
     # Attachment/Asset related errors

@@ -37,8 +37,7 @@
         "PROGRAM_DELETED": "Program deleted.",
         "REPORT_NOT_FOUND": "Report not found.",
         "INVALID_ASSET_IDS": "Invalid asset IDs.",
-        "COMMENT_NOT_FOUND": "Comment not found.",
-        "NOT_YOUR_COMMENT": "You can only update your own comments.",
+
         "CANNOT_EDIT_DELETED_PROGRAM": "Cannot edit content for a deleted program.",
         "ATTACHMENT_NOT_FOUND": "Attachment not found.",
         "INVALID_LOGIN_SESSION": "Invalid or expired login session.",

@@ -9,9 +9,6 @@ import { type Asset } from '../types/programTypes';
 import ReportHistory from './ReportHistory';
 import MarkdownEditor from './MarkdownEditor';
 import ConfirmationModal from './ConfirmationModal';
-import { replaceDataUrlsInMarkdown } from '../utils/markdownUtils';
-import attachmentService from '../services/attachmentService';
-import { apiPatch } from '../utils/apiClient';
 import { getErrorMessage } from '../utils/errorHelpers';
 import { useMarkdownEditorWithAttachments } from '../hooks/useMarkdownEditorWithAttachments';
 import toast from 'react-hot-toast';
@@ -118,7 +115,6 @@ const ReportHistoryAndComments: React.FC<ReportHistoryAndCommentsProps> = ({
         setShowConfirm(false);
         setIsSubmittingComment(true);
         try {
-            const content = pendingFormData.get('content') as string;
             const files: File[] = [];
             for (const [, value] of pendingFormData.entries()) {
                 if (value instanceof File) {
@@ -127,37 +123,7 @@ const ReportHistoryAndComments: React.FC<ReportHistoryAndCommentsProps> = ({
             }
 
             // Send FormData to backend via service
-            const commentResponse = await reportService.addComment(accessToken, reportId, pendingFormData, setAccessToken);
-            const commentId = commentResponse.id;
-
-            // Replace filenames with real URLs in content for preview
-            if (files.length > 0) {
-                try {
-                    const attachments = await attachmentService.getAttachmentsByComment(accessToken, reportId, commentId, setAccessToken);
-                    if (files.length !== attachments.length) {
-                        console.warn(`Mismatch: ${files.length} filenames vs ${attachments.length} attachments`);
-                    }
-                    const urlMap: Record<string, string> = {};
-                    for (let i = 0; i < files.length && i < attachments.length; i++) {
-                        const originalFilename = files[i].name;
-                        const sanitizedFilename = originalFilename.replace(/ /g, '_');
-                        const attachmentUrl = `${import.meta.env.VITE_API_BASE_URL}/reports/${reportId}/comments/${commentId}/attachments/${attachments[i].id}/download`;
-                        urlMap[originalFilename] = attachmentUrl;
-                        urlMap[sanitizedFilename] = attachmentUrl;
-                    }
-
-                    const updatedContent = replaceDataUrlsInMarkdown(content, urlMap);
-
-                    const updatedData = {
-                        content: updatedContent,
-                    };
-
-                    await apiPatch(`/reports/${reportId}/comments/${commentId}`, accessToken, updatedData, setAccessToken);
-                } catch (replaceError) {
-                    console.error('Error replacing data URLs:', replaceError);
-                    // Continue anyway
-                }
-            }
+            await reportService.addComment(accessToken, reportId, pendingFormData, setAccessToken);
 
             // Clear the comment content and files, and refresh the report history to show the new comment
             setCommentContent('');

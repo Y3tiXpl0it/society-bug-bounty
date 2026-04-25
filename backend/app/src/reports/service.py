@@ -111,12 +111,22 @@ class ReportService:
         # 2. Upload and attach files (if any provided)
         if files:
             attachment_service = AttachmentService(self.repository.session)
-            await attachment_service.upload_multiple_attachments(
+            attachments = await attachment_service.upload_multiple_attachments(
                 entity_type=EntityType.REPORT,
                 entity_id=new_report.id,
                 uploader=hacker,
                 files=files
             )
+            
+            # Replace filenames with actual attachment download URLs in the markdown content
+            if attachments and new_report.description:
+                for file, attachment in zip(files, attachments):
+                    original_name = file.filename
+                    sanitized_name = original_name.replace(' ', '_')
+                    attachment_url = f"/reports/{new_report.id}/attachments/{attachment.id}/download"
+                    
+                    new_report.description = new_report.description.replace(original_name, attachment_url)
+                    new_report.description = new_report.description.replace(sanitized_name, attachment_url)
 
         # 3. Final Commit (only if everything succeeded)
         await self.repository.session.commit()
@@ -344,12 +354,22 @@ class ReportService:
         # 2. Upload attachments
         if files:
             attachment_service = AttachmentService(self.repository.session)
-            await attachment_service.upload_multiple_attachments(
+            attachments = await attachment_service.upload_multiple_attachments(
                 entity_type=EntityType.REPORT_COMMENT,
                 entity_id=comment.id,
                 uploader=author,
                 files=files
             )
+            
+            # Replace filenames with actual attachment download URLs in the markdown content
+            if attachments and comment.content:
+                for file, attachment in zip(files, attachments):
+                    original_name = file.filename
+                    sanitized_name = original_name.replace(' ', '_')
+                    attachment_url = f"/reports/{report_id}/comments/{comment.id}/attachments/{attachment.id}/download"
+                    
+                    comment.content = comment.content.replace(original_name, attachment_url)
+                    comment.content = comment.content.replace(sanitized_name, attachment_url)
         
         # 3. COMMIT CHANGES
         await self.repository.session.commit()
@@ -518,36 +538,4 @@ class ReportService:
         # Get all events for the report
         return await self.repository.list_events_by_report(report_id)
 
-    async def update_comment(self, comment_id: uuid.UUID, update_data: dict, user: User) -> ReportComment:
-        """Updates a comment with the provided data."""
-        # Get the comment to check permissions
-        comment = await self.repository.get_comment_by_id(comment_id)
-        if not comment:
-            raise NotFoundException(detail={
-                "code": ErrorCode.COMMENT_NOT_FOUND,
-                "message": "Comment not found"
-            })
-        
-        report = await self.get_report_by_id(comment.report_id)
-        if report.program.deleted_at:
-             raise BadRequestException(detail={
-                 "code": ErrorCode.CANNOT_EDIT_DELETED_PROGRAM,
-                 "message": "Cannot edit comments on a report belonging to a deleted program."
-             })
 
-        # Check if user can update this comment (only the author can update their own comments)
-        if comment.user_id != user.id:
-            raise ForbiddenException(detail={
-                "code": ErrorCode.NOT_YOUR_COMMENT,
-                "message": "You can only update your own comments"
-            })
-
-        # Update the comment
-        updated_comment = await self.repository.update_comment(comment_id, update_data)
-        if not updated_comment:
-            raise NotFoundException(detail={
-                "code": ErrorCode.COMMENT_NOT_FOUND,
-                "message": "Comment not found"
-            })
-
-        return updated_comment

@@ -176,18 +176,7 @@ class ReportRepository:
         await self.session.refresh(new_comment)
         return new_comment
 
-    async def update(self, report_id: uuid.UUID, update_data: dict) -> Report | None:
-        """Updates a report with the provided data."""
-        report = await self.get_by_id(report_id)
-        if not report:
-            return None
 
-        for key, value in update_data.items():
-            if hasattr(report, key):
-                setattr(report, key, value)
-
-        await self.session.commit()
-        return await self.get_by_id(report_id)
 
     async def list_comments_by_report(self, report_id: uuid.UUID) -> list[ReportComment]:
         """Gets all comments for a report, ordered by creation date."""
@@ -199,25 +188,7 @@ class ReportRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def update_comment(self, comment_id: uuid.UUID, update_data: dict) -> ReportComment | None:
-        """Updates a comment with the provided data."""
-        comment = await self.get_comment_by_id(comment_id)
-        if not comment:
-            return None
 
-        for key, value in update_data.items():
-            if hasattr(comment, key):
-                setattr(comment, key, value)
-
-        await self.session.commit()
-        await self.session.refresh(comment)
-        return comment
-
-    async def get_comment_by_id(self, comment_id: uuid.UUID) -> ReportComment | None:
-        """Gets a comment by its ID."""
-        query = select(ReportComment).where(ReportComment.id == comment_id)
-        result = await self.session.execute(query)
-        return result.scalar_one_or_none()
 
     async def get_program_assets(self, program_id: uuid.UUID) -> list[ProgramAsset]:
         """Gets all assets for a program."""

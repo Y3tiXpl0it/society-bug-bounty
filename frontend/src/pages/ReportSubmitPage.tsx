@@ -7,12 +7,9 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../hooks/useAuth';
 import { AsyncContent } from '../components/AsyncContent';
 import programService from '../services/programService';
-import attachmentService from '../services/attachmentService';
 import ReportSubmitForm from '../components/ReportForm';
 import ConfirmationModal from '../components/ConfirmationModal';
-import { apiPatch } from '../utils/apiClient';
 import imageUploadService from '../utils/imageUploadService';
-import { replaceDataUrlsInMarkdown } from '../utils/markdownUtils';
 import { showErrorToast } from '../utils/errorHandler';
 
 /**
@@ -56,7 +53,7 @@ const ReportSubmitPage: React.FC = () => {
 
     const { mutate: submitReport, isPending: isSubmitting } = useMutation({
         mutationFn: async (data: { formData: FormData; filenames: string[] }) => {
-            const { formData, filenames } = data;
+            const { formData } = data;
 
             // Step 1: Upload the report with images embedded in FormData (POST)
             const result = await imageUploadService.upload(
@@ -66,58 +63,6 @@ const ReportSubmitPage: React.FC = () => {
                 setAccessToken
             );
 
-            // Step 2: If there are images, fix the Markdown URLs
-            if (filenames.length > 0) {
-                try {
-                    // Fetch the newly created attachments for this report
-                    const attachments = await attachmentService.getAttachmentsByReport(
-                        accessToken,
-                        result.id.toString(),
-                        setAccessToken
-                    );
-
-                    if (filenames.length !== attachments.length) {
-                        console.warn(
-                            `Mismatch: ${filenames.length} filenames vs ${attachments.length} attachments`
-                        );
-                    }
-
-                    // Map original filenames to the new backend download URLs
-                    const urlMap: Record<string, string> = {};
-                    for (let i = 0; i < filenames.length && i < attachments.length; i++) {
-                        const originalFilename = filenames[i];
-                        const sanitizedFilename = originalFilename.replace(/ /g, '_');
-
-                        // Construct the download URL
-                        const attachmentUrl = `${import.meta.env.VITE_API_BASE_URL}/reports/${result.id}/attachments/${attachments[i].id}/download`;
-
-                        urlMap[originalFilename] = attachmentUrl;
-                        urlMap[sanitizedFilename] = attachmentUrl;
-                    }
-
-                    // Replace Base64 placeholders with real URLs in the description
-                    const updatedDescription = replaceDataUrlsInMarkdown(result.description, urlMap);
-
-                    // Step 3: Update the report with the fixed Markdown (PATCH)
-                    await apiPatch(
-                        `/reports/${result.id}`,
-                        accessToken,
-                        { description: updatedDescription },
-                        setAccessToken
-                    );
-
-                    // Return the result with updated description just in case needed
-                    return { ...result, description: updatedDescription };
-
-                } catch (replaceError) {
-                    console.error('Error replacing data URLs:', replaceError);
-
-                    toast("Report submitted. However, image URL replacement failed.", {
-                        icon: '⚠️',
-                        duration: 5000,
-                    });
-                }
-            }
             return result;
         },
         onSuccess: () => {
